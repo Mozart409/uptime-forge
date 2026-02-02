@@ -63,12 +63,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Tailwind CSS
-        run: npm install -g @tailwindcss/cli tailwindcss
-
-      - name: Build CSS
-        run: npx tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
