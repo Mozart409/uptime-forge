@@ -38,6 +38,9 @@
           opentofu
           dbeaver-bin
           postgresql_16
+          tailwindcss_4
+          docker
+          docker-compose
         ];
       };
     });
