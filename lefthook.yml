@@ -1,6 +1,11 @@
 # Lefthook configuration for git hooks
 # https://github.com/evilmartians/lefthook
-
+pre-push:
+  commands:
+    check:
+      glob: "*.rs"
+      run: cargo fmt --all --check
+      stage_fixed: true
 pre-commit:
   parallel: false
   commands:
@@ -8,15 +13,12 @@ pre-commit:
       glob: "*.rs"
       run: cargo fmt --all
       stage_fixed: true
-
     lint:
       glob: "*.rs"
       run: cargo clippy --all-targets --all-features -- -D warnings
-
     test:
       glob: "*.rs"
       run: cargo test --all-features
-
     build-css:
       glob: "*.{css,rs}"
       run: tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify
