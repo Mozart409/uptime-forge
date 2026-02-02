@@ -4,3 +4,39 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Web framework
+axum = "0.8"
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = [
+    "trace",
+    "timeout",
+    "compression-gzip",
+    "catch-panic",
+    "request-id",
+    "util",
+    "fs",
+] }
+
+# Templating
+maud = { version = "0.26", features = ["axum"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+# Error handling
+color-eyre = "0.6"
+
+# Logging/tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP client
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+
+# Async utilities
+futures = "0.3"
+tokio-util = "0.7"
