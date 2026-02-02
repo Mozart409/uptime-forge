@@ -1,0 +1,38 @@
+[server]
+addr = "0.0.0.0:3000"
+# reload_config_interval = 60  # Reload config every 60 seconds (default, 0 to disable)
+
+[endpoints.google]
+addr = "https://google.com"
+description = "Google Search"
+# interval = 60             # Check every 60 seconds (default)
+# timeout = 10              # 10 second timeout (default)
+# expected_status = 200     # Expected HTTP status (default)
+# skip_tls_verification = false  # Skip TLS cert verification (default)
+
+[endpoints.cloudflare]
+addr = "https://cloudflare.com"
+description = "Cloudflare"
+
+[endpoints.mozart409]
+addr = "https://mozart409.com"
+description = "Mozart409"
+
+[endpoints.blog-mozart409]
+addr = "https://blog.mozart409.com"
+description = "Blog Mozart409"
+
+[endpoints.openrouter]
+addr = "https://openrouter.ai"
+
+[endpoints.apple]
+addr = "https://www.apple.com/"
+
+[endpoints.error404]
+addr = "https://www.apple.com/asdasj3j2131"
+
+[endpoints.error500]
+addr = "https://mockhttp.org/status/500"
+
+[endpoints.error408]
+addr = "https://mockhttp.org/status/408"
