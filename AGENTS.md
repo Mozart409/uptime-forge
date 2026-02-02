@@ -19,6 +19,16 @@ When you need documentation for libraries or APIs:
 nix develop                  # Enter dev shell with all tools
 ```
 
+### Just Commands (Primary Interface)
+
+```bash
+just                         # Show available commands
+just css-watch               # Watch CSS for development
+just css-build               # Build minified CSS for production
+just docker-up               # Build CSS and start Docker container
+just docker-down             # Stop Docker container
+```
+
 ### Bacon (Continuous Build - Preferred for Development)
 
 ```bash
@@ -64,12 +74,31 @@ just css-build               # Build minified CSS (production)
 
 **Note:** If the UI layout looks broken or unstyled, run `just css-watch` or `just css-build` to generate the Tailwind CSS output.
 
+### Docker
+
+```bash
+just docker-up               # Build CSS and start container (detached)
+just docker-down             # Stop and remove container
+docker compose logs -f       # View logs
+```
+
 ### Additional Tools (Available in Nix Shell)
 
 ```bash
 cargo deny check             # Audit dependencies
 cocogitto check              # Validate commit messages
+lefthook install             # Install git hooks
 ```
+
+## Git Hooks (Lefthook)
+
+Pre-commit hooks are configured in `lefthook.yml`:
+- **format** - Runs `cargo fmt` (auto-stages fixed files)
+- **lint** - Runs `cargo clippy` with warnings as errors
+- **test** - Runs `cargo test`
+- **build-css** - Rebuilds Tailwind CSS (auto-stages output)
+
+Install hooks with: `lefthook install`
 
 ## Project Structure
 
@@ -78,10 +107,15 @@ uptime-forge/
 ├── src/
 │   ├── main.rs              # Entry point, routing, middleware setup
 │   ├── config.rs            # Configuration structs and loading
-│   ├── layout.rs            # Maud HTML base layout
+│   ├── checker.rs           # Endpoint health checking and background tasks
+│   ├── layout.rs            # Maud HTML templates (dashboard, cards)
 │   └── public/              # Static assets (css/, js/, favicon)
 ├── Cargo.toml               # Dependencies and project config
 ├── forge.toml               # Runtime configuration
+├── Dockerfile               # Multi-stage Docker build
+├── compose.yml              # Docker Compose configuration
+├── justfile                 # Build commands
+├── lefthook.yml             # Git hooks configuration
 └── bacon.toml               # Bacon build tool config
 ```
 
@@ -239,6 +273,9 @@ async fn check_endpoint(config: &Config) -> Result<()> { ... }
 | serde / toml | Configuration |
 | color-eyre | Error handling |
 | tracing | Structured logging |
+| reqwest | HTTP client for endpoint checks |
+| futures | Async utilities |
+| tokio-util | Cancellation tokens for background tasks |
 
 ## Commit Messages
 
