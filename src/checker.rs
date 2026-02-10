@@ -52,7 +52,7 @@ pub async fn check_endpoint(name: &str, endpoint: &Endpoint) -> CheckResult {
 
     match client.get(&endpoint.addr).send().await {
         Ok(response) => {
-            let elapsed = start.elapsed().as_millis() as u64;
+            let elapsed = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
             let status = response.status().as_u16();
             let is_up = status == endpoint.expected_status;
 
@@ -74,7 +74,7 @@ pub async fn check_endpoint(name: &str, endpoint: &Endpoint) -> CheckResult {
             }
         }
         Err(e) => {
-            let elapsed = start.elapsed().as_millis() as u64;
+            let elapsed = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
             CheckResult {
                 name: name.to_string(),
                 description: endpoint.description.clone(),
@@ -134,8 +134,8 @@ fn spawn_endpoint_checker(
             }
 
             tokio::select! {
-                _ = tokio::time::sleep(interval) => {}
-                _ = cancel_token.cancelled() => {
+                () = tokio::time::sleep(interval) => {}
+                () = cancel_token.cancelled() => {
                     tracing::debug!(endpoint = %name, "endpoint checker cancelled");
                     break;
                 }
@@ -265,7 +265,7 @@ async fn apply_config_update(
     }
 
     // Update current endpoints
-    *current_endpoints = new_endpoints.clone();
+    current_endpoints.clone_from(new_endpoints);
 }
 
 /// Start all endpoint checkers and return the active tasks tracker
@@ -273,7 +273,7 @@ async fn start_all_checkers(
     endpoints: &HashMap<String, Endpoint>,
     state: &CheckResultsState,
 ) -> ActiveTasks {
-    let active_tasks: ActiveTasks = Default::default();
+    let active_tasks: ActiveTasks = Arc::default();
 
     for (name, endpoint) in endpoints {
         let cancel_token = CancellationToken::new();
@@ -318,7 +318,7 @@ pub async fn spawn_background_tasks(
         loop {
             // Wait for either timer or manual trigger
             tokio::select! {
-                _ = tokio::time::sleep(interval), if auto_reload => {
+                () = tokio::time::sleep(interval), if auto_reload => {
                     tracing::debug!("automatic config reload triggered");
                 }
                 Some(()) = reload_rx.recv() => {
