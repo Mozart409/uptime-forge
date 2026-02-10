@@ -1,5 +1,5 @@
 [server]
-addr = "0.0.0.0:3000"
+addr = "0.0.0.0:3003"
 # reload_config_interval = 60  # Reload config every 60 seconds (default, 0 to disable)
 
 [endpoints.google]
