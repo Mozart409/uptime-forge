@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: uptime
       POSTGRES_DB: uptime_forge
     ports:
-      - "5432:5432"
+      - "5444:5432"
     volumes:
       - uptime_forge_db:/var/lib/postgresql/data
     restart: unless-stopped
@@ -17,18 +17,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   uptime-forge:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: uptime-forge
     ports:
-      - "3000:3000"
+      - "3033:3000"
     volumes:
       - ./forge.toml:/app/forge.toml:ro
     environment:
-      DATABASE_URL: postgres://uptime:uptime@db:5432/uptime_forge
+      DATABASE_URL: postgres://uptime:uptime@db:5444/uptime_forge
     depends_on:
       db:
         condition: service_healthy
@@ -39,6 +38,5 @@ services:
       timeout: 3s
       start_period: 5s
       retries: 3
-
 volumes:
   uptime_forge_db:

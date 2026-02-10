@@ -85,7 +85,7 @@ The development compose file includes a TimescaleDB-backed Postgres instance wit
 Default connection string:
 
 ```
-postgres://uptime:uptime@db:5432/uptime_forge
+postgres://uptime:uptime@db:5444/uptime_forge
 ```
 
 Custom image and tuning files:
