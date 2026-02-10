@@ -16,6 +16,9 @@ pre-commit:
     lint:
       glob: "*.rs"
       run: cargo clippy --all-targets --all-features -- -D warnings
+    pedantic:
+      glob: "*.rs"
+      run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
     test:
       glob: "*.rs"
       run: cargo test --all-features

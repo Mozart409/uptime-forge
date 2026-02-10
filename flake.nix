@@ -42,6 +42,9 @@
           docker
           docker-compose
         ];
+        shellHook = ''
+          lefthook install
+        '';
       };
     });
 }
