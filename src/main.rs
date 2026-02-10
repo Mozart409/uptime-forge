@@ -1,11 +1,13 @@
 mod checker;
 mod config;
+mod db;
 mod layout;
 
 use std::path::PathBuf;
 
 use axum::{Router, extract::State, http::StatusCode, response::Html, routing::get};
 use color_eyre::eyre::{Context, Result};
+use sqlx::PgPool;
 use tower::ServiceBuilder;
 use tower_http::{
     ServiceBuilderExt,
@@ -26,6 +28,8 @@ use crate::config::Config;
 struct AppState {
     check_results: CheckResultsState,
     reload_trigger: ReloadTrigger,
+    #[allow(dead_code)]
+    db_pool: Option<PgPool>,
 }
 
 #[tokio::main]
@@ -39,6 +43,8 @@ async fn main() -> Result<()> {
     // Load configuration
     let config = Config::load("forge.toml")?;
     tracing::info!("loaded {} endpoints", config.endpoints.len());
+
+    let db_pool = db::connect_from_env().await?;
 
     // Build middleware stack
     // Note: Layers wrap in reverse order - first added is outermost
@@ -73,6 +79,7 @@ async fn main() -> Result<()> {
     let app_state = AppState {
         check_results,
         reload_trigger,
+        db_pool,
     };
 
     // Build router with shared state

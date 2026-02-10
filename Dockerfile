@@ -22,6 +22,7 @@ RUN cargo build --release && \
 
 # Copy actual source code
 COPY src ./src
+COPY migrations ./migrations
 
 # Build the application
 RUN cargo build --release --locked

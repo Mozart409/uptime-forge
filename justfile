@@ -1,7 +1,7 @@
-# Watch CSS for development (auto-rebuild on changes)
 default:
     just --choose
 
+# Watch CSS for development (auto-rebuild on changes)
 css-watch:
     tailwindcss -i src/public/css/input.css -o src/public/css/output.css --watch
 

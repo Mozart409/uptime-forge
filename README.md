@@ -21,7 +21,7 @@ git clone https://github.com/your-org/uptime-forge.git
 cd uptime-forge
 cp forge.toml.example forge.toml  # Edit with your endpoints
 
-# Build and run
+# Build and run (includes Postgres + TimescaleDB for development)
 docker compose up -d
 ```
 
@@ -77,6 +77,22 @@ skip_tls_verification = true     # For self-signed certs
 | `timeout` | `10` | Request timeout in seconds |
 | `expected_status` | `200` | Expected HTTP status code |
 | `skip_tls_verification` | `false` | Skip TLS certificate verification |
+
+## Database (Postgres + TimescaleDB)
+
+The development compose file includes a TimescaleDB-backed Postgres instance with basic tuning.
+
+Default connection string:
+
+```
+postgres://uptime:uptime@db:5432/uptime_forge
+```
+
+Custom image and tuning files:
+
+- `docker/postgres/Dockerfile`
+- `docker/postgres/postgresql.conf`
+- `docker/postgres/initdb/001-timescaledb.sql`
 
 ## API Endpoints
 
@@ -134,6 +150,7 @@ uptime-forge/
 ├── forge.toml         # Runtime configuration
 ├── Dockerfile         # Multi-stage Docker build
 ├── compose.yml        # Docker Compose setup
+├── docker/postgres/   # Custom Postgres + TimescaleDB image
 └── justfile           # Build commands
 ```
 
@@ -145,6 +162,9 @@ uptime-forge/
 - **[htmx](https://htmx.org/)** - Frontend interactivity
 - **[Tailwind CSS](https://tailwindcss.com/)** - Styling
 - **[Reqwest](https://github.com/seanmonstar/reqwest)** - HTTP client
+- **[SQLx](https://github.com/launchbadge/sqlx)** - Async SQL toolkit
+- **[Postgres](https://www.postgresql.org/)** - Database
+- **[TimescaleDB](https://www.timescale.com/)** - Time-series extensions
 
 ## License
 
