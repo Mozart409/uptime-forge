@@ -3,7 +3,7 @@ mod config;
 mod db;
 mod layout;
 
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
 use axum::{Router, extract::State, http::StatusCode, response::Html, routing::get};
 use color_eyre::eyre::{Context, Result};
@@ -40,6 +40,8 @@ async fn main() -> Result<()> {
     // Initialize tracing
     init_tracing();
 
+    dotenvy::dotenv().ok();
+
     // Load configuration
     let config = Config::load("forge.toml")?;
     tracing::info!("loaded {} endpoints", config.endpoints.len());
@@ -65,7 +67,7 @@ async fn main() -> Result<()> {
         .layer(CompressionLayer::new());
 
     // Create shared state for check results
-    let check_results: CheckResultsState = Default::default();
+    let check_results: CheckResultsState = Arc::default();
 
     // Perform initial check before starting server
     checker::initial_check(&config.endpoints, &check_results).await;
