@@ -3,7 +3,7 @@ use maud::{DOCTYPE, Markup, html};
 use crate::checker::CheckResult;
 
 /// Base HTML layout that wraps page content
-pub fn base(title: &str, content: Markup) -> Markup {
+pub fn base(title: &str, content: &Markup) -> Markup {
     html! {
         (DOCTYPE)
         html lang="en" {
@@ -58,7 +58,7 @@ pub fn dashboard(results: &[CheckResult]) -> Markup {
         }
     };
 
-    base("Uptime Forge - Dashboard", content)
+    base("Uptime Forge - Dashboard", &content)
 }
 
 /// Loading spinner for htmx requests
