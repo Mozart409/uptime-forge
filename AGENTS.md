@@ -1,5 +1,7 @@
 # AGENTS.md - Coding Agent Guidelines for uptime-forge
 
+**Last analyzed:** 2026-02-10 | **Git hash:** `9058b3033f59631f0ce9d1491bb85e67158ce5b1`
+
 ## Project Overview
 
 Uptime monitoring service built with Rust. Uses axum web framework, maud templating, htmx for interactivity, and TOML configuration.
@@ -95,10 +97,14 @@ lefthook install             # Install git hooks
 Pre-commit hooks are configured in `lefthook.yml`:
 - **format** - Runs `cargo fmt` (auto-stages fixed files)
 - **lint** - Runs `cargo clippy` with warnings as errors
+- **pedantic** - Runs `cargo clippy` with pedantic lints
 - **test** - Runs `cargo test`
 - **build-css** - Rebuilds Tailwind CSS (auto-stages output)
 
 Install hooks with: `lefthook install`
+
+Pre-push hooks:
+- **check** - Runs `cargo fmt --all --check` to verify formatting
 
 ## Project Structure
 
@@ -109,6 +115,7 @@ uptime-forge/
 │   ├── config.rs            # Configuration structs and loading
 │   ├── checker.rs           # Endpoint health checking and background tasks
 │   ├── layout.rs            # Maud HTML templates (dashboard, cards)
+│   ├── db.rs                # Database connection and utilities
 │   └── public/              # Static assets (css/, js/, favicon)
 ├── Cargo.toml               # Dependencies and project config
 ├── forge.toml               # Runtime configuration
@@ -274,8 +281,10 @@ async fn check_endpoint(config: &Config) -> Result<()> { ... }
 | color-eyre | Error handling |
 | tracing | Structured logging |
 | reqwest | HTTP client for endpoint checks |
+| sqlx | PostgreSQL database driver |
 | futures | Async utilities |
 | tokio-util | Cancellation tokens for background tasks |
+| dotenvy | Environment variable loading |
 
 ## Commit Messages
 
