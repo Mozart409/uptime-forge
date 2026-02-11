@@ -2,37 +2,70 @@
 addr = "0.0.0.0:3003"
 # reload_config_interval = 60  # Reload config every 60 seconds (default, 0 to disable)
 
+# Endpoint configuration options:
+# addr = "https://example.com"        # Required: URL to check
+# type = "http"                       # Check type: "http" (default), "tcp", "dns"
+# description = "My Service"          # Optional description
+# group = "backend"                   # Optional group for organizing endpoints
+# tags = ["production", "critical"]   # Optional tags for filtering
+# interval = 60                       # Check interval in seconds (default: 60)
+# timeout = 10                        # Request timeout in seconds (default: 10)
+# expected_status = 200               # Expected HTTP status (default: 200)
+# skip_tls_verification = false       # Skip TLS cert verification (default: false)
+# method = "GET"                      # HTTP method: GET, POST, PUT, etc. (default: GET)
+# headers = { Authorization = "Bearer ${API_TOKEN}" }  # Custom headers (supports env vars)
+# body = '{"check": "deep"}'          # Request body for POST/PUT
+# retries = 0                         # Number of retries before marking as failed (default: 0)
+# retry_delay = 5                     # Delay between retries in seconds (default: 5)
+# alert_after_failures = 3            # Alert after N consecutive failures (default: 3)
+# alert_channels = ["webhook"]        # Alert channels to notify
+
 [endpoints.google]
 addr = "https://google.com"
 description = "Google Search"
-# interval = 60             # Check every 60 seconds (default)
-# timeout = 10              # 10 second timeout (default)
-# expected_status = 200     # Expected HTTP status (default)
-# skip_tls_verification = false  # Skip TLS cert verification (default)
+group = "external"
+tags = ["search", "critical"]
 
 [endpoints.cloudflare]
 addr = "https://cloudflare.com"
 description = "Cloudflare"
+group = "external"
+tags = ["cdn", "critical"]
 
 [endpoints.mozart409]
 addr = "https://mozart409.com"
 description = "Mozart409"
+group = "personal"
 
 [endpoints.blog-mozart409]
 addr = "https://blog.mozart409.com"
 description = "Blog Mozart409"
+group = "personal"
+tags = ["blog"]
 
 [endpoints.openrouter]
 addr = "https://openrouter.ai"
+group = "external"
+tags = ["ai", "api"]
 
 [endpoints.apple]
 addr = "https://www.apple.com/"
+group = "external"
 
 [endpoints.error404]
 addr = "https://www.apple.com/asdasj3j2131"
+group = "testing"
+tags = ["expected-failure"]
+alert_after_failures = 0  # Never alert (expected to fail)
 
 [endpoints.error500]
 addr = "https://mockhttp.org/status/500"
+group = "testing"
+tags = ["expected-failure"]
+alert_after_failures = 0
 
 [endpoints.error408]
 addr = "https://mockhttp.org/status/408"
+group = "testing"
+tags = ["expected-failure"]
+alert_after_failures = 0
