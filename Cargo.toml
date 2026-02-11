@@ -2,6 +2,15 @@
 name = "uptime-forge"
 version = "0.1.2"
 edition = "2024"
+description = "Uptime monitoring service built with Rust"
+authors = ["mozart409"]
+license = "MIT"
+repository = "https://github.com/mozart409/uptime-forge"
+homepage = "https://github.com/mozart409/uptime-forge"
+readme = "README.md"
+keywords = ["uptime", "monitoring", "health-check", "htmx"]
+categories = ["web-programming"]
+rust-version = "1.92"
 
 [dependencies]
 # Async runtime
@@ -57,6 +66,12 @@ tokio-util = "0.7"
 
 # DNS resolution
 hickory-resolver = "0.25"
+
+[dev-dependencies]
+# Temp files for config tests
+tempfile = "3"
+# Better assertions
+pretty_assertions = "1"
 
 [build-dependencies]
 chrono = "0.4"
