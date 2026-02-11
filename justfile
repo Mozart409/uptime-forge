@@ -30,7 +30,7 @@ docker-down:
     docker compose down
 
 dev-up: css-build
-    COMPOSE_BAKE=true docker compose -f compose.dev.yml up -d --build
+    COMPOSE_BAKE=true docker compose -f compose.dev.yml up -d --build --remove-orphans
 
 dev-down: 
     docker compose -f compose.dev.yml down

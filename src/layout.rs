@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use maud::{DOCTYPE, Markup, html};
 
 use crate::checker::CheckResult;
 use crate::config::CheckType;
+use crate::db::{BucketStatus, TimeRange};
 
 /// Git hash at build time (set by build.rs)
 pub const GIT_HASH: &str = env!("GIT_HASH");
@@ -56,42 +59,85 @@ fn footer() -> Markup {
 }
 
 /// Dashboard page showing endpoint status cards
-pub fn dashboard(results: &[CheckResult]) -> Markup {
+pub fn dashboard(
+    results: &[CheckResult],
+    buckets: &HashMap<String, Vec<BucketStatus>>,
+    time_range: TimeRange,
+) -> Markup {
     let content = html! {
         div class="container mx-auto px-4 py-8" {
-            header class="mb-8 flex items-center justify-between" {
+            header class="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" {
                 div {
                     h1 class="text-3xl font-bold text-gray-800" { "Uptime Forge" }
                     p class="text-gray-600 mt-2" { "Endpoint Monitoring Dashboard" }
                 }
-                button
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                    hx-get="/reload"
-                    hx-swap="none"
-                    hx-indicator="#reload-spinner"
-                {
-                    span id="reload-spinner" class="htmx-indicator" {
-                        (spinner())
+                div class="flex items-center gap-4" {
+                    // Time range dropdown
+                    (time_range_dropdown(time_range))
+                    button
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                        hx-get="/reload"
+                        hx-swap="none"
+                        hx-indicator="#reload-spinner"
+                    {
+                        span id="reload-spinner" class="htmx-indicator" {
+                            (spinner())
+                        }
+                        "Reload Config"
                     }
-                    "Reload Config"
                 }
             }
 
             main {
                 // htmx polls /status every 10 seconds and swaps the content
+                // hx-include references the dropdown so the current range is always sent
                 div
                     id="status-grid"
                     hx-get="/status"
                     hx-trigger="every 10s"
                     hx-swap="innerHTML"
+                    hx-include="#time-range-select"
                 {
-                    (status_grid(results))
+                    (status_grid_with_buckets(results, buckets, time_range))
                 }
             }
         }
     };
 
     base("Uptime Forge - Dashboard", &content)
+}
+
+/// Time range dropdown selector
+fn time_range_dropdown(current: TimeRange) -> Markup {
+    html! {
+        div class="relative" {
+            select
+                id="time-range-select"
+                class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-gray-700 cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                hx-get="/status"
+                hx-trigger="change"
+                hx-target="#status-grid"
+                hx-swap="innerHTML"
+                name="range"
+                hx-include="this"
+            {
+                @for range in TimeRange::all() {
+                    option
+                        value=(range.as_str())
+                        selected[*range == current]
+                    {
+                        (range.label())
+                    }
+                }
+            }
+            // Dropdown arrow icon
+            div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500" {
+                svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" {
+                    path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" {}
+                }
+            }
+        }
+    }
 }
 
 /// Loading spinner for htmx requests
@@ -104,12 +150,17 @@ fn spinner() -> Markup {
     }
 }
 
-/// Grid of status cards (partial for htmx updates)
-pub fn status_grid(results: &[CheckResult]) -> Markup {
+/// Grid of status cards with bucket data (partial for htmx updates)
+pub fn status_grid_with_buckets(
+    results: &[CheckResult],
+    buckets: &HashMap<String, Vec<BucketStatus>>,
+    time_range: TimeRange,
+) -> Markup {
     html! {
         div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" {
             @for result in results {
-                (status_card(result))
+                @let endpoint_buckets = buckets.get(&result.name);
+                (status_card_with_buckets(result, endpoint_buckets, time_range))
             }
         }
 
@@ -121,8 +172,12 @@ pub fn status_grid(results: &[CheckResult]) -> Markup {
     }
 }
 
-/// Individual status card for an endpoint
-fn status_card(result: &CheckResult) -> Markup {
+/// Individual status card for an endpoint with status pills
+fn status_card_with_buckets(
+    result: &CheckResult,
+    buckets: Option<&Vec<BucketStatus>>,
+    time_range: TimeRange,
+) -> Markup {
     let display_name = result.description.as_deref().unwrap_or(&result.name);
 
     let check_type_label = match result.check_type {
@@ -211,6 +266,33 @@ fn status_card(result: &CheckResult) -> Markup {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            // Status pills at the bottom
+            (status_pills(buckets, time_range))
+        }
+    }
+}
+
+/// Status pills showing uptime history
+fn status_pills(buckets: Option<&Vec<BucketStatus>>, time_range: TimeRange) -> Markup {
+    html! {
+        div class="mt-4 pt-4 border-t border-gray-100" {
+            div class="flex items-center justify-between mb-2" {
+                span class="text-xs text-gray-500" { "Uptime history" }
+                span class="text-xs text-gray-400" { (time_range.label()) }
+            }
+            div class="flex gap-0.5" title="Status history (oldest to newest)" {
+                @if let Some(bucket_list) = buckets {
+                    @for bucket in bucket_list {
+                        span class={"w-full h-2 rounded-sm " (bucket.css_class())} {}
+                    }
+                } @else {
+                    // No data - show all gray pills
+                    @for _ in 0..30 {
+                        span class="w-full h-2 rounded-sm bg-gray-300" {}
                     }
                 }
             }
