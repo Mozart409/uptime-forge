@@ -16,7 +16,25 @@ Uptime monitoring service built with Rust using axum, maud templating, htmx, and
 
 ## Build & Development Commands
 
+### Nix Development Environment
+
+This project uses Nix flakes for reproducible development environments. All commands should be run inside the Nix shell:
+
+```bash
+# Enter the development shell (recommended for interactive use)
+nix develop
+
+# Or run a single command without entering the shell
+nix develop --command <command>
+
+# Examples:
+nix develop --command cargo build
+nix develop --command bacon
+```
+
 ### Primary Commands (Bacon - Recommended)
+
+Run these inside `nix develop` or prefix with `nix develop --command`:
 
 ```bash
 bacon                        # Default: continuous type checking
@@ -80,10 +98,41 @@ addr = "0.0.0.0:3003"
 [endpoints.example]
 addr = "https://example.com"
 description = "Example Site"
-# interval = 60             # Check interval seconds (default)
-# timeout = 10              # Request timeout seconds (default)
+# type = "http"             # Check type: "http" (default), "tcp", "dns"
+# group = "backend"         # Optional group for organizing endpoints
+# tags = ["production"]     # Optional tags for filtering
+# interval = 60             # Check interval seconds (default, warn if < 10)
+# timeout = 10              # Request timeout seconds (default, must be < interval)
 # expected_status = 200     # Expected HTTP status (default)
 # skip_tls_verification = false  # Skip TLS cert verification (default)
+# method = "GET"            # HTTP method: GET, POST, PUT, etc. (default: GET)
+# headers = { Authorization = "Bearer ${API_TOKEN}" }  # Custom headers (env var support)
+# body = '{"check": "deep"}'  # Request body for POST/PUT
+# retries = 0               # Retry count before marking failed (default: 0)
+# retry_delay = 5           # Delay between retries in seconds (default: 5)
+# alert_after_failures = 3  # Alert after N consecutive failures (default: 3)
+# alert_channels = ["webhook"]  # Alert channels to notify
+
+# TCP check example
+[endpoints.database]
+addr = "tcp://db.example.com:5432"
+type = "tcp"
+
+# DNS check example
+[endpoints.dns-check]
+addr = "dns://example.com"
+type = "dns"
+expected_records = ["1.2.3.4"]  # Optional: verify specific DNS records
+```
+
+### Environment Variable Substitution
+
+Config values support `${VAR_NAME}` syntax for environment variables:
+
+```toml
+[endpoints.api]
+addr = "https://api.example.com/health"
+headers = { Authorization = "Bearer ${API_TOKEN}" }
 ```
 
 ## Code Style Guidelines
