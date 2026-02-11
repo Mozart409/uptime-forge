@@ -27,7 +27,7 @@ services:
     volumes:
       - ./forge.toml:/app/forge.toml:ro
     environment:
-      DATABASE_URL: postgres://uptime:uptime@db:5444/uptime_forge
+      DATABASE_URL: postgres://uptime:uptime@db:5432/uptime_forge
     depends_on:
       db:
         condition: service_healthy
