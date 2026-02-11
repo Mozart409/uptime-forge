@@ -3,11 +3,17 @@ use maud::{DOCTYPE, Markup, html};
 use crate::checker::CheckResult;
 use crate::config::CheckType;
 
+/// Git hash at build time (set by build.rs)
+pub const GIT_HASH: &str = env!("GIT_HASH");
+
+/// Build timestamp (set by build.rs)
+pub const BUILD_TIME: &str = env!("BUILD_TIME");
+
 /// Base HTML layout that wraps page content
 pub fn base(title: &str, content: &Markup) -> Markup {
     html! {
         (DOCTYPE)
-        html lang="en" {
+        html lang="en" class="h-full" {
             head {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
@@ -15,9 +21,35 @@ pub fn base(title: &str, content: &Markup) -> Markup {
                 link rel="icon" href="/favicon.svg";
                 link rel="stylesheet" href="/css/output.css";
             }
-            body class="bg-gray-100 min-h-screen" {
-                (content)
+            body class="bg-gray-100 min-h-full flex flex-col" {
+                main class="flex-grow" {
+                    (content)
+                }
+                (footer())
                 script src="/js/htmx.min.js" defer {}
+            }
+        }
+    }
+}
+
+/// Footer with build information
+fn footer() -> Markup {
+    html! {
+        footer class="bg-gray-800 text-gray-400 py-4 mt-auto" {
+            div class="container mx-auto px-4" {
+                div class="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm" {
+                    div {
+                        span class="font-semibold text-gray-300" { "Uptime Forge" }
+                        span class="mx-2" { "|" }
+                        span { "Built: " (BUILD_TIME) }
+                    }
+                    div class="flex items-center gap-2" {
+                        span { "Commit: " }
+                        code class="font-mono text-blue-400 bg-gray-700 px-2 py-0.5 rounded" {
+                            (GIT_HASH)
+                        }
+                    }
+                }
             }
         }
     }
