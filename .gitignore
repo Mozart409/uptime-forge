@@ -1,3 +1,6 @@
 /target
 .env
 .direnv/
+
+# Generated CSS (run `just css-build` to regenerate)
+src/public/css/output.css
