@@ -20,12 +20,13 @@ pub async fn connect_from_env() -> Result<Option<PgPool>> {
         .await
         .wrap_err("failed to connect to database")?;
 
+    tracing::info!("database connection established");
     sqlx::migrate!()
         .run(&pool)
         .await
         .wrap_err("failed to run database migrations")?;
 
-    tracing::info!("database connection established");
+    tracing::info!("database migrated");
 
     Ok(Some(pool))
 }

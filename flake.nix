@@ -40,10 +40,13 @@
           postgresql_16
           tailwindcss_4
           docker
+          docker-buildx
           docker-compose
+          sqlx-cli
         ];
         shellHook = ''
           lefthook install
+          export COMPOSE_BAKE=true
         '';
       };
     });
