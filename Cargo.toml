@@ -27,6 +27,10 @@ maud = { version = "0.26", features = ["axum"] }
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 
+# URL parsing and regex
+url = "2"
+regex = "1"
+
 # Error handling
 color-eyre = "0.6"
 
@@ -46,3 +50,9 @@ sqlx = { version = "0.8", features = ["migrate", "postgres", "runtime-tokio-rust
 # Async utilities
 futures = "0.3"
 tokio-util = "0.7"
+
+# DNS resolution
+hickory-resolver = "0.25"
+
+[build-dependencies]
+chrono = "0.4"
