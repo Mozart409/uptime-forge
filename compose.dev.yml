@@ -1,7 +1,6 @@
 services:
   db:
-    build:
-      context: ./docker/postgres
+    image: timescale/timescaledb:latest-pg16
     container_name: uptime-forge-db
     environment:
       POSTGRES_USER: uptime
@@ -11,6 +10,9 @@ services:
       - "5444:5432"
     volumes:
       - uptime_forge_db:/var/lib/postgresql/data
+      - ./example/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./example/postgres/initdb/:/docker-entrypoint-initdb.d/:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U uptime -d uptime_forge"]

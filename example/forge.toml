@@ -1,0 +1,73 @@
+[server]
+addr = "0.0.0.0:3000"
+# reload_config_interval = 60  # Reload config every 60 seconds (default, 0 to disable)
+
+# Example endpoints - customize these for your needs
+
+[endpoints.google]
+addr = "https://google.com"
+description = "Google Search"
+group = "external"
+tags = ["search"]
+
+[endpoints.github]
+addr = "https://github.com"
+description = "GitHub"
+group = "external"
+tags = ["code"]
+
+# Example: Your own services
+# [endpoints.my-api]
+# addr = "https://api.example.com/health"
+# description = "My API Service"
+# group = "backend"
+# tags = ["api", "critical"]
+# interval = 30
+# timeout = 10
+# expected_status = 200
+
+# Example: Service with authentication
+# [endpoints.private-api]
+# addr = "https://api.example.com/private/health"
+# description = "Private API"
+# group = "backend"
+# headers = { Authorization = "Bearer ${API_TOKEN}" }
+
+# Example: POST request with body
+# [endpoints.webhook-check]
+# addr = "https://api.example.com/webhook"
+# method = "POST"
+# body = '{"check": "health"}'
+# headers = { "Content-Type" = "application/json" }
+
+# Example: TCP check (database, redis, etc.)
+# [endpoints.database]
+# addr = "tcp://db.example.com:5432"
+# type = "tcp"
+# description = "PostgreSQL Database"
+# group = "infrastructure"
+
+# Example: DNS check
+# [endpoints.dns-check]
+# addr = "dns://example.com"
+# type = "dns"
+# description = "DNS Resolution"
+# expected_records = ["1.2.3.4"]
+
+# All available options:
+# addr = "https://example.com"        # Required: URL to check
+# type = "http"                       # Check type: "http" (default), "tcp", "dns"
+# description = "My Service"          # Optional description
+# group = "backend"                   # Optional group for organizing endpoints
+# tags = ["production", "critical"]   # Optional tags for filtering
+# interval = 60                       # Check interval in seconds (default: 60)
+# timeout = 10                        # Request timeout in seconds (default: 10)
+# expected_status = 200               # Expected HTTP status (default: 200)
+# skip_tls_verification = false       # Skip TLS cert verification (default: false)
+# method = "GET"                      # HTTP method: GET, POST, PUT, etc. (default: GET)
+# headers = { Key = "Value" }         # Custom headers (supports ${ENV_VAR} syntax)
+# body = '{"key": "value"}'           # Request body for POST/PUT
+# retries = 0                         # Number of retries before marking as failed (default: 0)
+# retry_delay = 5                     # Delay between retries in seconds (default: 5)
+# alert_after_failures = 3            # Alert after N consecutive failures (default: 3)
+# alert_channels = ["webhook"]        # Alert channels to notify
