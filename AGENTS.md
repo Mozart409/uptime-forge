@@ -18,10 +18,31 @@ Uptime monitoring service built with Rust using axum, maud templating, htmx, and
 
 ### Nix Development Environment
 
-This project uses Nix flakes for reproducible development environments. All commands should be run inside the Nix shell:
+This project uses Nix flakes for reproducible development environments.
+
+#### Automatic Environment (Recommended)
+
+Using **direnv**, the environment activates automatically when you `cd` into the project:
 
 ```bash
-# Enter the development shell (recommended for interactive use)
+# 1. Install direnv (if not installed)
+nix-env -iA nixpkgs.direnv
+
+# 2. Hook direnv into your shell (add to ~/.zshrc or ~/.bashrc)
+eval "$(direnv hook zsh)"  # or: eval "$(direnv hook bash)"
+
+# 3. Allow the .envrc file (one-time, in project directory)
+direnv allow
+
+# Now the environment loads automatically when you cd into the directory!
+```
+
+#### Manual Environment Activation
+
+Alternatively, enter the environment manually:
+
+```bash
+# Enter the development shell
 nix develop
 
 # Or run a single command without entering the shell
