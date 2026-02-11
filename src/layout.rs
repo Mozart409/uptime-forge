@@ -48,7 +48,12 @@ fn footer() -> Markup {
                     }
                     div class="flex items-center gap-2" {
                         span { "Commit: " }
-                        code class="font-mono text-blue-400 bg-gray-700 px-2 py-0.5 rounded" {
+                        a
+                            href=(format!("https://github.com/Mozart409/uptime-forge/commit/{}", GIT_HASH))
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="font-mono text-blue-400 bg-gray-700 px-2 py-0.5 rounded hover:bg-gray-600 transition-colors"
+                        {
                             (GIT_HASH)
                         }
                     }
