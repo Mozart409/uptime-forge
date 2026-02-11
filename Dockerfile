@@ -49,6 +49,14 @@ RUN cargo build --release --locked
 # Stage 3: Runtime image
 FROM alpine:3.21 AS runtime
 
+# OCI Image Labels
+LABEL org.opencontainers.image.title="uptime-forge"
+LABEL org.opencontainers.image.description="Uptime monitoring service built with Rust"
+LABEL org.opencontainers.image.url="https://github.com/mozart409/uptime-forge"
+LABEL org.opencontainers.image.source="https://github.com/mozart409/uptime-forge"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="mozart409"
+
 WORKDIR /app
 
 # Install CA certificates for HTTPS requests
