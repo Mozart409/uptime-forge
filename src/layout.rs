@@ -1,6 +1,7 @@
 use maud::{DOCTYPE, Markup, html};
 
 use crate::checker::CheckResult;
+use crate::config::CheckType;
 
 /// Base HTML layout that wraps page content
 pub fn base(title: &str, content: &Markup) -> Markup {
@@ -92,18 +93,47 @@ pub fn status_grid(results: &[CheckResult]) -> Markup {
 fn status_card(result: &CheckResult) -> Markup {
     let display_name = result.description.as_deref().unwrap_or(&result.name);
 
+    let check_type_label = match result.check_type {
+        CheckType::Http => "HTTP",
+        CheckType::Tcp => "TCP",
+        CheckType::Dns => "DNS",
+    };
+
     html! {
         div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow" {
             div class="flex items-center justify-between mb-4" {
-                h2 class="text-lg font-semibold text-gray-800 truncate" title=(display_name) {
-                    (display_name)
+                div class="flex-1 min-w-0" {
+                    h2 class="text-lg font-semibold text-gray-800 truncate" title=(display_name) {
+                        (display_name)
+                    }
+                    // Show group if present
+                    @if let Some(ref group) = result.group {
+                        span class="text-xs text-gray-500" { (group) }
+                    }
                 }
-                (status_indicator(result.is_up))
+                div class="flex items-center gap-2" {
+                    // Check type badge
+                    span class="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded" {
+                        (check_type_label)
+                    }
+                    (status_indicator(result.is_up))
+                }
+            }
+
+            // Tags
+            @if !result.tags.is_empty() {
+                div class="flex flex-wrap gap-1 mb-3" {
+                    @for tag in &result.tags {
+                        span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded" {
+                            (tag)
+                        }
+                    }
+                }
             }
 
             div class="space-y-2 text-sm" {
                 div class="flex justify-between" {
-                    span class="text-gray-500" { "URL" }
+                    span class="text-gray-500" { "Address" }
                     span class="text-gray-700 truncate ml-2 max-w-[200px]" title=(result.addr) {
                         (result.addr)
                     }
@@ -125,6 +155,12 @@ fn status_card(result: &CheckResult) -> Markup {
 
                 @if let Some(ref error) = result.error {
                     div class="mt-3 p-2 bg-red-50 rounded text-red-600 text-xs" {
+                        // Show error type badge if available
+                        @if let Some(ref error_type) = result.error_type {
+                            span class="inline-block px-1.5 py-0.5 bg-red-200 text-red-700 rounded text-xs font-medium mr-2" {
+                                (error_type.as_str())
+                            }
+                        }
                         (error)
                         @if let Some(status) = result.status_code {
                             @if !result.is_up {
