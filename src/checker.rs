@@ -682,3 +682,311 @@ pub async fn spawn_background_tasks(
 
     reload_tx
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::HttpMethod;
+
+    // ============ ErrorType Tests ============
+
+    #[test]
+    fn error_type_as_str_returns_correct_values() {
+        assert_eq!(ErrorType::Timeout.as_str(), "timeout");
+        assert_eq!(ErrorType::Dns.as_str(), "dns");
+        assert_eq!(ErrorType::Tls.as_str(), "tls");
+        assert_eq!(ErrorType::Connection.as_str(), "connection");
+        assert_eq!(ErrorType::StatusMismatch.as_str(), "status_mismatch");
+        assert_eq!(ErrorType::TcpRefused.as_str(), "tcp_refused");
+        assert_eq!(ErrorType::DnsNxdomain.as_str(), "dns_nxdomain");
+        assert_eq!(ErrorType::DnsMismatch.as_str(), "dns_mismatch");
+        assert_eq!(ErrorType::ClientBuild.as_str(), "client_build");
+        assert_eq!(ErrorType::Unknown.as_str(), "unknown");
+    }
+
+    #[test]
+    fn error_type_equality() {
+        assert_eq!(ErrorType::Timeout, ErrorType::Timeout);
+        assert_ne!(ErrorType::Timeout, ErrorType::Dns);
+    }
+
+    #[test]
+    fn error_type_clone() {
+        let original = ErrorType::Tls;
+        let cloned = original.clone();
+        assert_eq!(original, cloned);
+    }
+
+    // ============ base_result Tests ============
+
+    fn make_test_endpoint() -> Endpoint {
+        Endpoint {
+            addr: "https://example.com/health".to_string(),
+            check_type: CheckType::Http,
+            description: Some("Test endpoint".to_string()),
+            group: Some("backend".to_string()),
+            tags: vec!["production".to_string(), "api".to_string()],
+            interval: 60,
+            timeout: 10,
+            expected_status: 200,
+            skip_tls_verification: false,
+            method: HttpMethod::Get,
+            headers: HashMap::new(),
+            body: None,
+            retries: 0,
+            retry_delay: 5,
+            alert_after_failures: 3,
+            alert_channels: vec![],
+            expected_records: vec![],
+        }
+    }
+
+    #[test]
+    fn base_result_copies_endpoint_fields() {
+        let endpoint = make_test_endpoint();
+        let result = base_result("my-endpoint", &endpoint);
+
+        assert_eq!(result.name, "my-endpoint");
+        assert_eq!(result.description, Some("Test endpoint".to_string()));
+        assert_eq!(result.group, Some("backend".to_string()));
+        assert_eq!(
+            result.tags,
+            vec!["production".to_string(), "api".to_string()]
+        );
+        assert_eq!(result.addr, "https://example.com/health");
+        assert_eq!(result.check_type, CheckType::Http);
+    }
+
+    #[test]
+    fn base_result_initializes_is_up_to_false() {
+        let endpoint = make_test_endpoint();
+        let result = base_result("test", &endpoint);
+
+        assert!(!result.is_up);
+    }
+
+    #[test]
+    fn base_result_initializes_optional_fields_to_none() {
+        let endpoint = make_test_endpoint();
+        let result = base_result("test", &endpoint);
+
+        assert!(result.status_code.is_none());
+        assert!(result.response_time_ms.is_none());
+        assert!(result.error.is_none());
+        assert!(result.error_type.is_none());
+    }
+
+    #[test]
+    fn base_result_resolves_env_vars_in_addr() {
+        // SAFETY: Tests are run single-threaded with --test-threads=1 or are isolated
+        unsafe {
+            std::env::set_var("TEST_CHECK_HOST", "api.example.com");
+        }
+
+        let mut endpoint = make_test_endpoint();
+        endpoint.addr = "https://${TEST_CHECK_HOST}/status".to_string();
+
+        let result = base_result("test", &endpoint);
+
+        assert_eq!(result.addr, "https://api.example.com/status");
+
+        unsafe {
+            std::env::remove_var("TEST_CHECK_HOST");
+        }
+    }
+
+    #[test]
+    fn base_result_handles_none_fields() {
+        let mut endpoint = make_test_endpoint();
+        endpoint.description = None;
+        endpoint.group = None;
+        endpoint.tags = vec![];
+
+        let result = base_result("test", &endpoint);
+
+        assert!(result.description.is_none());
+        assert!(result.group.is_none());
+        assert!(result.tags.is_empty());
+    }
+
+    // ============ CheckResult Tests ============
+
+    #[test]
+    fn check_result_clone() {
+        let endpoint = make_test_endpoint();
+        let mut result = base_result("test", &endpoint);
+        result.is_up = true;
+        result.status_code = Some(200);
+        result.response_time_ms = Some(150);
+
+        let cloned = result.clone();
+
+        assert_eq!(result.name, cloned.name);
+        assert_eq!(result.is_up, cloned.is_up);
+        assert_eq!(result.status_code, cloned.status_code);
+        assert_eq!(result.response_time_ms, cloned.response_time_ms);
+    }
+
+    #[test]
+    fn check_result_debug() {
+        let endpoint = make_test_endpoint();
+        let result = base_result("test", &endpoint);
+
+        let debug_str = format!("{result:?}");
+
+        assert!(debug_str.contains("CheckResult"));
+        assert!(debug_str.contains("test"));
+    }
+
+    // ============ CheckType Handling Tests ============
+
+    #[test]
+    fn base_result_preserves_http_check_type() {
+        let mut endpoint = make_test_endpoint();
+        endpoint.check_type = CheckType::Http;
+
+        let result = base_result("test", &endpoint);
+        assert_eq!(result.check_type, CheckType::Http);
+    }
+
+    #[test]
+    fn base_result_preserves_tcp_check_type() {
+        let mut endpoint = make_test_endpoint();
+        endpoint.check_type = CheckType::Tcp;
+        endpoint.addr = "tcp://localhost:5432".to_string();
+
+        let result = base_result("test", &endpoint);
+        assert_eq!(result.check_type, CheckType::Tcp);
+    }
+
+    #[test]
+    fn base_result_preserves_dns_check_type() {
+        let mut endpoint = make_test_endpoint();
+        endpoint.check_type = CheckType::Dns;
+        endpoint.addr = "dns://example.com".to_string();
+
+        let result = base_result("test", &endpoint);
+        assert_eq!(result.check_type, CheckType::Dns);
+    }
+
+    // ============ check_all_endpoints Tests ============
+
+    #[tokio::test]
+    async fn check_all_endpoints_returns_empty_for_empty_input() {
+        let endpoints: HashMap<String, Endpoint> = HashMap::new();
+        let results = check_all_endpoints(&endpoints).await;
+        assert!(results.is_empty());
+    }
+
+    #[tokio::test]
+    async fn check_all_endpoints_sorts_alphabetically() {
+        // This test just verifies sorting logic, actual network calls will fail but
+        // results will still be sorted
+        let mut endpoints = HashMap::new();
+
+        let mut ep1 = make_test_endpoint();
+        ep1.addr = "https://a.invalid".to_string();
+        ep1.timeout = 1; // Quick timeout
+        endpoints.insert("zebra".to_string(), ep1);
+
+        let mut ep2 = make_test_endpoint();
+        ep2.addr = "https://b.invalid".to_string();
+        ep2.timeout = 1;
+        endpoints.insert("alpha".to_string(), ep2);
+
+        let mut ep3 = make_test_endpoint();
+        ep3.addr = "https://c.invalid".to_string();
+        ep3.timeout = 1;
+        endpoints.insert("middle".to_string(), ep3);
+
+        let results = check_all_endpoints(&endpoints).await;
+
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0].name, "alpha");
+        assert_eq!(results[1].name, "middle");
+        assert_eq!(results[2].name, "zebra");
+    }
+
+    #[tokio::test]
+    async fn check_all_endpoints_sorting_is_case_insensitive() {
+        let mut endpoints = HashMap::new();
+
+        let mut ep1 = make_test_endpoint();
+        ep1.addr = "https://a.invalid".to_string();
+        ep1.timeout = 1;
+        endpoints.insert("ZEBRA".to_string(), ep1);
+
+        let mut ep2 = make_test_endpoint();
+        ep2.addr = "https://b.invalid".to_string();
+        ep2.timeout = 1;
+        endpoints.insert("alpha".to_string(), ep2);
+
+        let results = check_all_endpoints(&endpoints).await;
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].name, "alpha");
+        assert_eq!(results[1].name, "ZEBRA");
+    }
+
+    // ============ get_sorted_results Tests ============
+
+    #[tokio::test]
+    async fn get_sorted_results_returns_empty_for_empty_state() {
+        let state: CheckResultsState = Arc::new(RwLock::new(HashMap::new()));
+        let results = get_sorted_results(&state).await;
+        assert!(results.is_empty());
+    }
+
+    #[tokio::test]
+    async fn get_sorted_results_sorts_alphabetically() {
+        let state: CheckResultsState = Arc::new(RwLock::new(HashMap::new()));
+
+        {
+            let mut state_guard = state.write().await;
+            let endpoint = make_test_endpoint();
+
+            let mut result1 = base_result("zebra", &endpoint);
+            result1.is_up = true;
+            state_guard.insert("zebra".to_string(), result1);
+
+            let mut result2 = base_result("alpha", &endpoint);
+            result2.is_up = false;
+            state_guard.insert("alpha".to_string(), result2);
+
+            let mut result3 = base_result("middle", &endpoint);
+            result3.is_up = true;
+            state_guard.insert("middle".to_string(), result3);
+        }
+
+        let results = get_sorted_results(&state).await;
+
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0].name, "alpha");
+        assert_eq!(results[1].name, "middle");
+        assert_eq!(results[2].name, "zebra");
+    }
+
+    #[tokio::test]
+    async fn get_sorted_results_preserves_all_fields() {
+        let state: CheckResultsState = Arc::new(RwLock::new(HashMap::new()));
+
+        {
+            let mut state_guard = state.write().await;
+            let endpoint = make_test_endpoint();
+
+            let mut result = base_result("test", &endpoint);
+            result.is_up = true;
+            result.status_code = Some(200);
+            result.response_time_ms = Some(42);
+            state_guard.insert("test".to_string(), result);
+        }
+
+        let results = get_sorted_results(&state).await;
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "test");
+        assert!(results[0].is_up);
+        assert_eq!(results[0].status_code, Some(200));
+        assert_eq!(results[0].response_time_ms, Some(42));
+    }
+}
