@@ -1,9 +1,8 @@
 # Timescale DB Schema
 
-
 ```sql
 
-CREATE TABLE events (
+CREATE TABLE uptime_events (
   endpoint_id uuid NOT NULL,
   ts timestamptz NOT NULL,
   status_code int,
@@ -35,4 +34,3 @@ SELECT add_continuous_aggregate_policy('uptime_events_daily',
   schedule_interval => INTERVAL '1 hour');
 
 ```
-
