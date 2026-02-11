@@ -2,6 +2,7 @@ use std::{collections::HashMap, net::ToSocketAddrs, path::PathBuf, sync::Arc, ti
 
 use hickory_resolver::{Resolver, config::ResolverConfig, name_server::TokioConnectionProvider};
 use reqwest::Client;
+use sqlx::PgPool;
 use tokio::{
     io::AsyncWriteExt,
     net::TcpStream,
@@ -10,6 +11,7 @@ use tokio::{
 use tokio_util::sync::CancellationToken;
 
 use crate::config::{CheckType, Config, Endpoint};
+use crate::db;
 
 /// Shared state containing cached check results
 pub type CheckResultsState = Arc<RwLock<HashMap<String, CheckResult>>>;
@@ -377,6 +379,7 @@ fn spawn_endpoint_checker(
     name: String,
     endpoint: Endpoint,
     state: CheckResultsState,
+    db_pool: Option<PgPool>,
     cancel_token: CancellationToken,
 ) {
     tokio::spawn(async move {
@@ -391,6 +394,13 @@ fn spawn_endpoint_checker(
                 response_time_ms = ?result.response_time_ms,
                 "endpoint check completed"
             );
+
+            // Write event to database if available
+            if let Some(ref pool) = db_pool
+                && let Err(e) = db::insert_uptime_event(pool, &result).await
+            {
+                tracing::warn!(endpoint = %name, error = %e, "failed to insert uptime event");
+            }
 
             {
                 let mut results = state.write().await;
@@ -409,10 +419,23 @@ fn spawn_endpoint_checker(
 }
 
 /// Perform initial check of all endpoints and populate state
-pub async fn initial_check(endpoints: &HashMap<String, Endpoint>, state: &CheckResultsState) {
+pub async fn initial_check(
+    endpoints: &HashMap<String, Endpoint>,
+    state: &CheckResultsState,
+    db_pool: Option<&PgPool>,
+) {
     tracing::info!("performing initial endpoint checks");
 
     let results = check_all_endpoints(endpoints).await;
+
+    // Write initial results to database
+    if let Some(pool) = db_pool {
+        for result in &results {
+            if let Err(e) = db::insert_uptime_event(pool, result).await {
+                tracing::warn!(endpoint = %result.name, error = %e, "failed to insert initial uptime event");
+            }
+        }
+    }
 
     let mut state_guard = state.write().await;
     for result in results {
@@ -428,6 +451,7 @@ async fn apply_config_update(
     current_endpoints: &mut HashMap<String, Endpoint>,
     active_tasks: &ActiveTasks,
     state: &CheckResultsState,
+    db_pool: Option<PgPool>,
 ) {
     let mut tasks = active_tasks.write().await;
     let mut results = state.write().await;
@@ -482,6 +506,7 @@ async fn apply_config_update(
                 name.clone(),
                 endpoint.clone(),
                 Arc::clone(state),
+                db_pool.clone(),
                 cancel_token.clone(),
             );
             tasks.insert(name.clone(), cancel_token);
@@ -497,6 +522,7 @@ async fn apply_config_update(
                 name.clone(),
                 endpoint.clone(),
                 Arc::clone(state),
+                db_pool.clone(),
                 cancel_token.clone(),
             );
             tasks.insert(name.clone(), cancel_token);
@@ -522,6 +548,15 @@ async fn apply_config_update(
         );
         let check_results = check_all_endpoints(&endpoints_to_check).await;
 
+        // Write to database
+        if let Some(ref pool) = db_pool {
+            for result in &check_results {
+                if let Err(e) = db::insert_uptime_event(pool, result).await {
+                    tracing::warn!(endpoint = %result.name, error = %e, "failed to insert uptime event");
+                }
+            }
+        }
+
         let mut results = state.write().await;
         for result in check_results {
             results.insert(result.name.clone(), result);
@@ -536,6 +571,7 @@ async fn apply_config_update(
 async fn start_all_checkers(
     endpoints: &HashMap<String, Endpoint>,
     state: &CheckResultsState,
+    db_pool: Option<PgPool>,
 ) -> ActiveTasks {
     let active_tasks: ActiveTasks = Arc::default();
 
@@ -546,6 +582,7 @@ async fn start_all_checkers(
             name.clone(),
             endpoint.clone(),
             Arc::clone(state),
+            db_pool.clone(),
             cancel_token.clone(),
         );
 
@@ -562,11 +599,12 @@ pub async fn spawn_background_tasks(
     config_path: PathBuf,
     initial_config: Config,
     state: CheckResultsState,
+    db_pool: Option<PgPool>,
 ) -> ReloadTrigger {
     let reload_interval = initial_config.server.reload_config_interval;
 
     // Start initial endpoint checkers
-    let active_tasks = start_all_checkers(&initial_config.endpoints, &state).await;
+    let active_tasks = start_all_checkers(&initial_config.endpoints, &state, db_pool.clone()).await;
 
     // Store current endpoints for comparison
     let current_endpoints = Arc::new(RwLock::new(initial_config.endpoints));
@@ -607,6 +645,16 @@ pub async fn spawn_background_tasks(
                 tracing::debug!("config unchanged, re-checking all endpoints");
                 // Even if config unchanged, re-check all endpoints on manual reload
                 let check_results = check_all_endpoints(&new_config.endpoints).await;
+
+                // Write to database
+                if let Some(ref pool) = db_pool {
+                    for result in &check_results {
+                        if let Err(e) = db::insert_uptime_event(pool, result).await {
+                            tracing::warn!(endpoint = %result.name, error = %e, "failed to insert uptime event");
+                        }
+                    }
+                }
+
                 let mut results = state.write().await;
                 for result in check_results {
                     results.insert(result.name.clone(), result);
@@ -617,7 +665,14 @@ pub async fn spawn_background_tasks(
             tracing::info!("config changed, updating endpoints");
 
             // Apply the config update
-            apply_config_update(&new_config.endpoints, &mut current, &active_tasks, &state).await;
+            apply_config_update(
+                &new_config.endpoints,
+                &mut current,
+                &active_tasks,
+                &state,
+                db_pool.clone(),
+            )
+            .await;
         }
     });
 

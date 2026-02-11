@@ -3,10 +3,19 @@ mod config;
 mod db;
 mod layout;
 
-use std::{path::PathBuf, sync::Arc};
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
 
-use axum::{Router, extract::State, http::StatusCode, response::Html, routing::get};
+use axum::{
+    Router,
+    extract::{Query, State},
+    http::StatusCode,
+    response::Html,
+    routing::get,
+};
 use color_eyre::eyre::{Context, Result};
+use serde::Deserialize;
 use sqlx::PgPool;
 use tower::ServiceBuilder;
 use tower_http::{
@@ -22,6 +31,7 @@ use tracing_subscriber::{EnvFilter, fmt, layer::SubscriberExt, util::SubscriberI
 
 use crate::checker::{CheckResultsState, ReloadTrigger};
 use crate::config::Config;
+use crate::db::{BucketStatus, TimeRange};
 
 /// Combined application state
 #[derive(Clone)]
@@ -70,12 +80,17 @@ async fn main() -> Result<()> {
     let check_results: CheckResultsState = Arc::default();
 
     // Perform initial check before starting server
-    checker::initial_check(&config.endpoints, &check_results).await;
+    checker::initial_check(&config.endpoints, &check_results, db_pool.as_ref()).await;
 
     // Spawn background tasks (endpoint checkers + config reloader)
     let config_path = PathBuf::from("forge.toml");
-    let reload_trigger =
-        checker::spawn_background_tasks(config_path, config.clone(), check_results.clone()).await;
+    let reload_trigger = checker::spawn_background_tasks(
+        config_path,
+        config.clone(),
+        check_results.clone(),
+        db_pool.clone(),
+    )
+    .await;
 
     // Combined application state
     let app_state = AppState {
@@ -116,15 +131,58 @@ fn init_tracing() {
         .init();
 }
 
-async fn index(State(state): State<AppState>) -> Html<String> {
+/// Query parameters for status endpoints
+#[derive(Debug, Deserialize)]
+struct StatusQuery {
+    #[serde(default)]
+    range: Option<String>,
+}
+
+/// Get bucket statuses for all endpoints, or empty map if no database
+async fn get_buckets(
+    db_pool: Option<&PgPool>,
+    endpoint_names: &[String],
+    time_range: TimeRange,
+) -> HashMap<String, Vec<BucketStatus>> {
+    match db_pool {
+        Some(pool) => match db::get_all_endpoint_buckets(pool, endpoint_names, time_range).await {
+            Ok(buckets) => buckets,
+            Err(e) => {
+                tracing::warn!(error = %e, "failed to fetch bucket statuses");
+                HashMap::new()
+            }
+        },
+        None => HashMap::new(),
+    }
+}
+
+async fn index(State(state): State<AppState>, Query(params): Query<StatusQuery>) -> Html<String> {
     let results = checker::get_sorted_results(&state.check_results).await;
-    Html(layout::dashboard(&results).into_string())
+    let time_range = params
+        .range
+        .as_deref()
+        .map(TimeRange::from_str)
+        .unwrap_or_default();
+
+    let endpoint_names: Vec<String> = results.iter().map(|r| r.name.clone()).collect();
+    let buckets = get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await;
+
+    Html(layout::dashboard(&results, &buckets, time_range).into_string())
 }
 
 /// Partial endpoint for htmx polling - returns only the status grid
-async fn status(State(state): State<AppState>) -> Html<String> {
+async fn status(State(state): State<AppState>, Query(params): Query<StatusQuery>) -> Html<String> {
     let results = checker::get_sorted_results(&state.check_results).await;
-    Html(layout::status_grid(&results).into_string())
+    let time_range = params
+        .range
+        .as_deref()
+        .map(TimeRange::from_str)
+        .unwrap_or_default();
+
+    let endpoint_names: Vec<String> = results.iter().map(|r| r.name.clone()).collect();
+    let buckets = get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await;
+
+    Html(layout::status_grid_with_buckets(&results, &buckets, time_range).into_string())
 }
 
 /// Trigger config reload and re-check all endpoints
