@@ -1,6 +1,6 @@
 # AGENTS.md - Coding Agent Guidelines for uptime-forge
 
-**Last updated:** 2026-02-11 | **Git hash:** `29189fb9e921e0c2e43e69c2bbd2461a0a0e4a57`
+**Last updated:** 2026-02-12 | **Git hash:** `848268f608e8178e11b5101a4d807d6a4f924150`
 
 > **Maintenance:** When modifying this file, update the date and git hash above.
 > Run `git rev-parse HEAD` to get the current hash after committing changes.
@@ -107,6 +107,13 @@ src/
 ├── layout.rs      # Maud HTML templates
 ├── db.rs          # Database connection
 └── public/        # Static assets (css/, js/)
+
+example/           # Ready-to-use deployment files
+├── compose.yml    # Docker Compose for production
+├── forge.toml     # Example endpoint configuration
+└── postgres/      # PostgreSQL + TimescaleDB config
+    ├── postgresql.conf
+    └── initdb/001-timescaledb.sql
 ```
 
 ## Configuration (forge.toml)

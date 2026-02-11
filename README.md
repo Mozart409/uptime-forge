@@ -16,16 +16,23 @@ A lightweight uptime monitoring service built with Rust. Monitor HTTP endpoints 
 ### Using Docker (Recommended)
 
 ```bash
-# Clone and configure
-git clone https://github.com/your-org/uptime-forge.git
-cd uptime-forge
-cp forge.toml.example forge.toml  # Edit with your endpoints
+# Copy the example folder
+cp -r example/ ~/uptime-forge
+cd ~/uptime-forge
 
-# Build and run (includes Postgres + TimescaleDB for development)
+# Edit the configuration with your endpoints
+nano forge.toml
+
+# Start the stack
 docker compose up -d
 ```
 
 Open http://localhost:3000 to view the dashboard.
+
+The `example/` folder contains everything you need:
+- `compose.yml` - Docker Compose configuration
+- `forge.toml` - Endpoint configuration (edit this!)
+- `postgres/` - PostgreSQL + TimescaleDB configuration
 
 ### Using Nix
 
@@ -80,19 +87,18 @@ skip_tls_verification = true     # For self-signed certs
 
 ## Database (Postgres + TimescaleDB)
 
-The development compose file includes a TimescaleDB-backed Postgres instance with basic tuning.
+The compose file includes a TimescaleDB-backed Postgres instance with tuning for time-series data.
 
 Default connection string:
 
 ```
-postgres://uptime:uptime@db:5444/uptime_forge
+postgres://uptime:uptime@db:5432/uptime_forge
 ```
 
-Custom image and tuning files:
+Configuration files (in `example/postgres/`):
 
-- `docker/postgres/Dockerfile`
-- `docker/postgres/postgresql.conf`
-- `docker/postgres/initdb/001-timescaledb.sql`
+- `postgresql.conf` - PostgreSQL tuning settings
+- `initdb/001-timescaledb.sql` - Extension initialization
 
 ## API Endpoints
 
@@ -147,10 +153,11 @@ uptime-forge/
 │   ├── checker.rs     # Endpoint health checking logic
 │   ├── layout.rs      # Maud HTML templates
 │   └── public/        # Static assets (css/, js/, favicon)
-├── forge.toml         # Runtime configuration
+├── example/           # Ready-to-use deployment files
+│   ├── compose.yml    # Docker Compose setup
+│   ├── forge.toml     # Example configuration
+│   └── postgres/      # PostgreSQL + TimescaleDB config
 ├── Dockerfile         # Multi-stage Docker build
-├── compose.yml        # Docker Compose setup
-├── docker/postgres/   # Custom Postgres + TimescaleDB image
 └── justfile           # Build commands
 ```
 
