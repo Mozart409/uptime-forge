@@ -247,12 +247,6 @@ fn status_card_with_buckets(
 
                 @if let Some(ref error) = result.error {
                     div class="mt-3 p-2 bg-red-50 rounded text-red-600 text-xs" {
-                        // Show error type badge if available
-                        @if let Some(ref error_type) = result.error_type {
-                            span class="inline-block px-1.5 py-0.5 bg-red-200 text-red-700 rounded text-xs font-medium mr-2" {
-                                (error_type.as_str())
-                            }
-                        }
                         (error)
                         @if let Some(status) = result.status_code {
                             @if !result.is_up {
