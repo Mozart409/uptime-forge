@@ -11,6 +11,10 @@ A lightweight uptime monitoring service built with Rust. Monitor HTTP endpoints 
 - **TLS Verification Skip** - Option to skip certificate verification for internal services
 - **Minimal Resource Usage** - Built with Rust for low memory footprint
 
+## Dashboard
+
+![Uptime Forge Dashboard](imgs/screenshot.png)
+
 ## Quick Start
 
 ### Using Docker (Recommended)
