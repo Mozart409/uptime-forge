@@ -21,7 +21,7 @@ cp -r example/ ~/uptime-forge
 cd ~/uptime-forge
 
 # Edit the configuration with your endpoints
-nano forge.toml
+vim forge.toml
 
 # Start the stack
 docker compose up -d
@@ -30,6 +30,7 @@ docker compose up -d
 Open http://localhost:3000 to view the dashboard.
 
 The `example/` folder contains everything you need:
+
 - `compose.yml` - Docker Compose configuration
 - `forge.toml` - Endpoint configuration (edit this!)
 - `postgres/` - PostgreSQL + TimescaleDB configuration
@@ -69,21 +70,21 @@ skip_tls_verification = true     # For self-signed certs
 
 #### Server
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `addr` | Required | Server bind address (e.g., `127.0.0.1:3000`) |
-| `reload_config_interval` | `60` | Seconds between config reloads (0 to disable) |
+| Option                   | Default  | Description                                   |
+| ------------------------ | -------- | --------------------------------------------- |
+| `addr`                   | Required | Server bind address (e.g., `127.0.0.1:3000`)  |
+| `reload_config_interval` | `60`     | Seconds between config reloads (0 to disable) |
 
 #### Endpoints
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `addr` | Required | URL to monitor |
-| `description` | None | Display name in dashboard |
-| `interval` | `60` | Seconds between checks |
-| `timeout` | `10` | Request timeout in seconds |
-| `expected_status` | `200` | Expected HTTP status code |
-| `skip_tls_verification` | `false` | Skip TLS certificate verification |
+| Option                  | Default  | Description                       |
+| ----------------------- | -------- | --------------------------------- |
+| `addr`                  | Required | URL to monitor                    |
+| `description`           | None     | Display name in dashboard         |
+| `interval`              | `60`     | Seconds between checks            |
+| `timeout`               | `10`     | Request timeout in seconds        |
+| `expected_status`       | `200`    | Expected HTTP status code         |
+| `skip_tls_verification` | `false`  | Skip TLS certificate verification |
 
 ## Database (Postgres + TimescaleDB)
 
@@ -102,12 +103,12 @@ Configuration files (in `example/postgres/`):
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Dashboard UI |
-| `/status` | GET | Status grid partial (for htmx) |
-| `/reload` | GET | Trigger config reload |
-| `/health` | GET | Health check (returns "ok") |
+| Endpoint  | Method | Description                    |
+| --------- | ------ | ------------------------------ |
+| `/`       | GET    | Dashboard UI                   |
+| `/status` | GET    | Status grid partial (for htmx) |
+| `/reload` | GET    | Trigger config reload          |
+| `/health` | GET    | Health check (returns "ok")    |
 
 ## Development
 
