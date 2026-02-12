@@ -22,12 +22,12 @@ dev:
     wait
 
 # Build and start Docker container in detached mode
-docker-up: css-build
-    docker compose up -d --build
+prod-up: css-build
+    docker compose -f ./example/compose.yml up -d --build
 
 # Stop and remove Docker container
-docker-down:
-    docker compose down
+prod-down:
+    docker compose -f ./example/compose.yml down
 
 dev-up: css-build
     COMPOSE_BAKE=true docker compose -f compose.dev.yml up -d --build --remove-orphans
