@@ -1,31 +1,38 @@
-# Stage 1: Build the Rust application
-FROM rust:1.92-alpine AS builder
+# Stage 1: Chef - prepare recipe for dependency caching
+FROM rust:1.92-alpine AS chef
+
+RUN apk add --no-cache musl-dev && \
+    cargo install cargo-chef --locked
 
 WORKDIR /app
 
+# Stage 2: Planner - analyze dependencies
+FROM chef AS planner
+
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+COPY build.rs ./
+
+RUN cargo chef prepare --recipe-path recipe.json
+
+# Stage 3: Builder - build dependencies then application
+FROM chef AS builder
+
 # Install build dependencies (git needed for build.rs)
-RUN apk add --no-cache musl-dev git
+RUN apk add --no-cache git
 
-# Copy manifests and build.rs first for dependency caching
+# Copy recipe and build dependencies (cached layer)
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
+
+# Copy source and build application
 COPY Cargo.toml Cargo.lock build.rs ./
-
-# Create dummy src to build dependencies
-RUN mkdir src && \
-    echo 'fn main() { println!("dummy"); }' > src/main.rs
-
-# Build dependencies only (this layer is cached)
-RUN cargo build --release && \
-    rm -rf src target/release/deps/uptime_forge* target/release/.fingerprint/uptime_forge*
-
-# Copy actual source code
 COPY src ./src
 COPY migrations ./migrations
 
-# Build the application
 RUN cargo build --release --locked
 
-
-# Stage 2: Runtime image
+# Stage 4: Runtime image
 FROM alpine:3.21 AS runtime
 
 # OCI Image Labels
