@@ -2,8 +2,7 @@
   description = "Development environment for a Node.js project";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
-    unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
@@ -11,7 +10,6 @@
   outputs = {
     self,
     nixpkgs,
-    unstable,
     flake-utils,
     rust-overlay,
   }:
@@ -43,6 +41,7 @@
           docker-buildx
           docker-compose
           sqlx-cli
+          opencode
         ];
         shellHook = ''
           lefthook install
