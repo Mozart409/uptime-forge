@@ -100,12 +100,15 @@ async fn main() -> Result<()> {
     };
 
     // Build router with shared state
+    // Serve static files, then fall back to 404 handler for unknown routes
+    let static_files = ServeDir::new("src/public").not_found_service(get(not_found));
+
     let app = Router::new()
         .route("/", get(index))
         .route("/status", get(status))
         .route("/reload", get(reload))
         .route("/health", get(health))
-        .fallback_service(ServeDir::new("src/public"))
+        .fallback_service(static_files)
         .layer(middleware)
         .with_state(app_state);
 
@@ -138,25 +141,36 @@ struct StatusQuery {
     range: Option<String>,
 }
 
+/// Result type for bucket fetching - can indicate DB error
+enum BucketResult {
+    /// Successfully fetched buckets (may be empty if no DB configured)
+    Success(HashMap<String, Vec<BucketStatus>>),
+    /// Database error occurred
+    DbError(String),
+}
+
 /// Get bucket statuses for all endpoints, or empty map if no database
 async fn get_buckets(
     db_pool: Option<&PgPool>,
     endpoint_names: &[String],
     time_range: TimeRange,
-) -> HashMap<String, Vec<BucketStatus>> {
+) -> BucketResult {
     match db_pool {
         Some(pool) => match db::get_all_endpoint_buckets(pool, endpoint_names, time_range).await {
-            Ok(buckets) => buckets,
+            Ok(buckets) => BucketResult::Success(buckets),
             Err(e) => {
                 tracing::warn!(error = %e, "failed to fetch bucket statuses");
-                HashMap::new()
+                BucketResult::DbError(e.to_string())
             }
         },
-        None => HashMap::new(),
+        None => BucketResult::Success(HashMap::new()),
     }
 }
 
-async fn index(State(state): State<AppState>, Query(params): Query<StatusQuery>) -> Html<String> {
+async fn index(
+    State(state): State<AppState>,
+    Query(params): Query<StatusQuery>,
+) -> (StatusCode, Html<String>) {
     let results = checker::get_sorted_results(&state.check_results).await;
     let time_range = params
         .range
@@ -165,13 +179,33 @@ async fn index(State(state): State<AppState>, Query(params): Query<StatusQuery>)
         .unwrap_or_default();
 
     let endpoint_names: Vec<String> = results.iter().map(|r| r.name.clone()).collect();
-    let buckets = get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await;
 
-    Html(layout::dashboard(&results, &buckets, time_range).into_string())
+    match get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await {
+        BucketResult::Success(buckets) => (
+            StatusCode::OK,
+            Html(layout::dashboard(&results, &buckets, time_range).into_string()),
+        ),
+        BucketResult::DbError(err) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Html(
+                layout::error_page(
+                    503,
+                    "Database Unavailable",
+                    &format!(
+                        "Unable to connect to the database. The service is temporarily unavailable. Error: {err}"
+                    ),
+                )
+                .into_string(),
+            ),
+        ),
+    }
 }
 
 /// Partial endpoint for htmx polling - returns only the status grid
-async fn status(State(state): State<AppState>, Query(params): Query<StatusQuery>) -> Html<String> {
+async fn status(
+    State(state): State<AppState>,
+    Query(params): Query<StatusQuery>,
+) -> (StatusCode, Html<String>) {
     let results = checker::get_sorted_results(&state.check_results).await;
     let time_range = params
         .range
@@ -180,9 +214,17 @@ async fn status(State(state): State<AppState>, Query(params): Query<StatusQuery>
         .unwrap_or_default();
 
     let endpoint_names: Vec<String> = results.iter().map(|r| r.name.clone()).collect();
-    let buckets = get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await;
 
-    Html(layout::status_grid_with_buckets(&results, &buckets, time_range).into_string())
+    match get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await {
+        BucketResult::Success(buckets) => (
+            StatusCode::OK,
+            Html(layout::status_grid_with_buckets(&results, &buckets, time_range).into_string()),
+        ),
+        BucketResult::DbError(_) => (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Html(layout::db_error_partial("Database connection failed. Retrying...").into_string()),
+        ),
+    }
 }
 
 /// Trigger config reload and re-check all endpoints
@@ -196,4 +238,19 @@ async fn reload(State(state): State<AppState>) -> StatusCode {
 
 async fn health() -> &'static str {
     "ok"
+}
+
+/// Fallback handler for 404 - Not Found
+async fn not_found() -> (StatusCode, Html<String>) {
+    (
+        StatusCode::NOT_FOUND,
+        Html(
+            layout::error_page(
+                404,
+                "Page Not Found",
+                "The page you're looking for doesn't exist or has been moved.",
+            )
+            .into_string(),
+        ),
+    )
 }

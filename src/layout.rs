@@ -320,3 +320,67 @@ fn status_indicator(is_up: bool) -> Markup {
         }
     }
 }
+
+/// Partial error message for htmx responses (e.g., database errors during polling)
+pub fn db_error_partial(message: &str) -> Markup {
+    html! {
+        div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center" {
+            div class="flex items-center justify-center gap-3 text-red-600" {
+                svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" {
+                    path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" {}
+                }
+                span class="font-medium" { (message) }
+            }
+        }
+    }
+}
+
+/// Generic error page with customizable status code and message
+pub fn error_page(status_code: u16, title: &str, message: &str) -> Markup {
+    let (icon_color, bg_color) = match status_code {
+        400..=499 => ("text-yellow-500", "bg-yellow-100"),
+        500..=599 => ("text-red-500", "bg-red-100"),
+        _ => ("text-gray-500", "bg-gray-100"),
+    };
+
+    let content = html! {
+        div class="container mx-auto px-4 py-16" {
+            div class="max-w-md mx-auto text-center" {
+                // Error icon
+                div class={"mx-auto w-24 h-24 rounded-full flex items-center justify-center mb-8 " (bg_color)} {
+                    svg class={"w-12 h-12 " (icon_color)} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" {
+                        @if (400..500).contains(&status_code) {
+                            // Question mark icon for 4xx
+                            path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" {}
+                        } @else {
+                            // Exclamation icon for 5xx and others
+                            path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" {}
+                        }
+                    }
+                }
+
+                // Status code
+                h1 class="text-6xl font-bold text-gray-800 mb-4" { (status_code) }
+
+                // Title
+                h2 class="text-2xl font-semibold text-gray-700 mb-4" { (title) }
+
+                // Message
+                p class="text-gray-600 mb-8" { (message) }
+
+                // Back to home button
+                a
+                    href="/"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                {
+                    svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" {
+                        path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" {}
+                    }
+                    "Back to Dashboard"
+                }
+            }
+        }
+    };
+
+    base(&format!("{status_code} - {title}"), &content)
+}
