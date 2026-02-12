@@ -1,25 +1,4 @@
-# Stage 1: Build CSS with standalone Tailwind CLI (no npm required)
-FROM debian:bookworm-slim AS css-builder
-
-WORKDIR /app
-
-# Download standalone Tailwind CSS v4 binary
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && \
-    curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.7/tailwindcss-linux-x64 && \
-    chmod +x tailwindcss-linux-x64 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy CSS source
-COPY src/public/css/input.css src/public/css/input.css
-
-# Copy source files for Tailwind to scan for classes
-COPY src/*.rs src/
-
-# Build minified CSS
-RUN ./tailwindcss-linux-x64 -i src/public/css/input.css -o src/public/css/output.css --minify
-
-
-# Stage 2: Build the Rust application
+# Stage 1: Build the Rust application
 FROM rust:1.92-alpine AS builder
 
 WORKDIR /app
@@ -46,7 +25,7 @@ COPY migrations ./migrations
 RUN cargo build --release --locked
 
 
-# Stage 3: Runtime image
+# Stage 2: Runtime image
 FROM alpine:3.21 AS runtime
 
 # OCI Image Labels
@@ -68,12 +47,8 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 # Copy the binary
 COPY --from=builder /app/target/release/uptime-forge /app/uptime-forge
 
-# Copy static assets
-COPY src/public/js /app/src/public/js
-COPY src/public/favicon.svg /app/src/public/favicon.svg
-
-# Copy built CSS from css-builder stage
-COPY --from=css-builder /app/src/public/css/output.css /app/src/public/css/output.css
+# Copy static assets (CSS is pre-built and committed to repo)
+COPY src/public /app/src/public
 
 # Copy default config (can be overridden with volume mount)
 COPY forge.toml /app/forge.toml
