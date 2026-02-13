@@ -14,6 +14,7 @@ use axum::{
     response::Html,
     routing::get,
 };
+use axum_prometheus::PrometheusMetricLayerBuilder;
 use color_eyre::eyre::{Context, Result};
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -58,6 +59,12 @@ async fn main() -> Result<()> {
 
     let db_pool = db::connect_from_env().await?;
 
+    // Set up Prometheus metrics layer (excludes /metrics and /health from tracking)
+    let (prometheus_layer, metric_handle) = PrometheusMetricLayerBuilder::new()
+        .with_ignore_patterns(&["/metrics", "/health"])
+        .with_default_metrics()
+        .build_pair();
+
     // Build middleware stack
     // Note: Layers wrap in reverse order - first added is outermost
     let middleware = ServiceBuilder::new()
@@ -74,7 +81,9 @@ async fn main() -> Result<()> {
         // Catch panics and convert them to 500 responses
         .layer(CatchPanicLayer::new())
         // Compress responses
-        .layer(CompressionLayer::new());
+        .layer(CompressionLayer::new())
+        // Prometheus metrics (innermost to capture actual request handling time)
+        .layer(prometheus_layer);
 
     // Create shared state for check results
     let check_results: CheckResultsState = Arc::default();
@@ -108,6 +117,7 @@ async fn main() -> Result<()> {
         .route("/status", get(status))
         .route("/reload", get(reload))
         .route("/health", get(health))
+        .route("/metrics", get(|| async move { metric_handle.render() }))
         .fallback_service(static_files)
         .layer(middleware)
         .with_state(app_state);

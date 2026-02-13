@@ -67,6 +67,9 @@ tokio-util = "0.7"
 # DNS resolution
 hickory-resolver = "0.25"
 
+# Prometheus metrics
+axum-prometheus = "0.10"
+
 [dev-dependencies]
 # Temp files for config tests
 tempfile = "3"
