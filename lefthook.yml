@@ -6,9 +6,15 @@ pre-push:
       glob: "*.rs"
       run: cargo fmt --all --check
       stage_fixed: true
+    build-release:
+      run: cargo build --release --locked
 pre-commit:
   parallel: false
   commands:
+    lockfile:
+      glob: "Cargo.{toml,lock}"
+      run: cargo generate-lockfile
+      stage_fixed: true
     format:
       glob: "*.rs"
       run: cargo fmt --all
