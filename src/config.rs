@@ -56,10 +56,18 @@ pub struct ServerConfig {
     /// Interval in seconds to reload config file (default: 60, 0 to disable)
     #[serde(default = "default_reload_config_interval")]
     pub reload_config_interval: u64,
+    /// Base path for the application (default: "/")
+    /// Used when the app is served behind a reverse proxy at a subpath
+    #[serde(default = "default_base_path")]
+    pub base_path: String,
 }
 
 const fn default_reload_config_interval() -> u64 {
     60
+}
+
+fn default_base_path() -> String {
+    "/".to_string()
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -498,6 +506,7 @@ mod tests {
             server: ServerConfig {
                 addr: "127.0.0.1:3000".parse().unwrap(),
                 reload_config_interval: 60,
+                base_path: "/".to_string(),
             },
             endpoints,
         }
@@ -939,5 +948,76 @@ headers = { Authorization = "Bearer token123", "Content-Type" = "application/jso
             endpoint.headers.get("Content-Type").unwrap(),
             "application/json"
         );
+    }
+
+    // ============ Base Path Tests ============
+
+    #[test]
+    fn config_uses_default_base_path() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let config_path = dir.path().join("base_path_default.toml");
+
+        let toml_content = r#"
+[server]
+addr = "0.0.0.0:3003"
+
+[endpoints.test]
+addr = "https://example.com"
+"#;
+
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        file.write_all(toml_content.as_bytes()).unwrap();
+
+        let config = Config::load(&config_path).unwrap();
+
+        assert_eq!(config.server.base_path, "/");
+    }
+
+    #[test]
+    fn config_parses_custom_base_path() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let config_path = dir.path().join("base_path_custom.toml");
+
+        let toml_content = r#"
+[server]
+addr = "0.0.0.0:3003"
+base_path = "/uptime-forge"
+
+[endpoints.test]
+addr = "https://example.com"
+"#;
+
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        file.write_all(toml_content.as_bytes()).unwrap();
+
+        let config = Config::load(&config_path).unwrap();
+
+        assert_eq!(config.server.base_path, "/uptime-forge");
+    }
+
+    #[test]
+    fn config_parses_base_path_with_trailing_slash() {
+        use std::io::Write;
+        let dir = tempfile::tempdir().unwrap();
+        let config_path = dir.path().join("base_path_slash.toml");
+
+        let toml_content = r#"
+[server]
+addr = "0.0.0.0:3003"
+base_path = "/monitoring/"
+
+[endpoints.test]
+addr = "https://example.com"
+"#;
+
+        let mut file = std::fs::File::create(&config_path).unwrap();
+        file.write_all(toml_content.as_bytes()).unwrap();
+
+        let config = Config::load(&config_path).unwrap();
+
+        // Note: The raw value is stored, normalization happens in main.rs
+        assert_eq!(config.server.base_path, "/monitoring/");
     }
 }

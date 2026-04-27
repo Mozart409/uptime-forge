@@ -1,6 +1,6 @@
 # AGENTS.md - Coding Agent Guidelines for uptime-forge
 
-**Last updated:** 2026-02-12 | **Git hash:** `848268f608e8178e11b5101a4d807d6a4f924150`
+**Last updated:** 2026-04-27 | **Git hash:** `bbd6a653d084b98848114f74a1d248c1ab86f07a`
 
 > **Maintenance:** When modifying this file, update the date and git hash above.
 > Run `git rev-parse HEAD` to get the current hash after committing changes.
@@ -122,6 +122,7 @@ example/           # Ready-to-use deployment files
 [server]
 addr = "0.0.0.0:3003"
 # reload_config_interval = 60  # Seconds (default 60, 0 to disable)
+# base_path = "/uptime-forge"   # Base path when behind reverse proxy (default: /)
 
 [endpoints.example]
 addr = "https://example.com"

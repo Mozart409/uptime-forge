@@ -12,8 +12,21 @@ pub const GIT_HASH: &str = env!("GIT_HASH");
 /// Build timestamp (set by build.rs)
 pub const BUILD_TIME: &str = env!("BUILD_TIME");
 
+/// Build an asset path with the base path prefix
+fn asset_path(base_path: &str, path: &str) -> String {
+    if base_path == "/" {
+        path.to_string()
+    } else {
+        format!("{base_path}{path}")
+    }
+}
+
 /// Base HTML layout that wraps page content
-pub fn base(title: &str, content: &Markup) -> Markup {
+pub fn base(title: &str, content: &Markup, base_path: &str) -> Markup {
+    let favicon_path = asset_path(base_path, "/favicon.svg");
+    let css_path = asset_path(base_path, "/css/output.css");
+    let js_path = asset_path(base_path, "/js/htmx.min.js");
+
     html! {
         (DOCTYPE)
         html lang="en" class="h-full" {
@@ -21,15 +34,15 @@ pub fn base(title: &str, content: &Markup) -> Markup {
                 meta charset="utf-8";
                 meta name="viewport" content="width=device-width, initial-scale=1";
                 title { (title) }
-                link rel="icon" href="/favicon.svg";
-                link rel="stylesheet" href="/css/output.css";
+                link rel="icon" href=(favicon_path);
+                link rel="stylesheet" href=(css_path);
             }
             body class="bg-gray-100 min-h-full flex flex-col" {
                 main class="flex-grow" {
                     (content)
                 }
                 (footer())
-                script src="/js/htmx.min.js" defer {}
+                script src=(js_path) defer {}
             }
         }
     }
@@ -68,7 +81,11 @@ pub fn dashboard(
     results: &[CheckResult],
     buckets: &HashMap<String, Vec<BucketStatus>>,
     time_range: TimeRange,
+    base_path: &str,
 ) -> Markup {
+    let reload_path = asset_path(base_path, "/reload");
+    let status_path = asset_path(base_path, "/status");
+
     let content = html! {
         div class="container mx-auto px-4 py-8" {
             header class="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" {
@@ -78,10 +95,10 @@ pub fn dashboard(
                 }
                 div class="flex items-center gap-4" {
                     // Time range dropdown
-                    (time_range_dropdown(time_range))
+                    (time_range_dropdown(time_range, base_path))
                     button
                         class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                        hx-get="/reload"
+                        hx-get=(reload_path)
                         hx-swap="none"
                         hx-indicator="#reload-spinner"
                     {
@@ -98,7 +115,7 @@ pub fn dashboard(
                 // hx-include references the dropdown so the current range is always sent
                 div
                     id="status-grid"
-                    hx-get="/status"
+                    hx-get=(status_path)
                     hx-trigger="every 10s"
                     hx-swap="innerHTML"
                     hx-include="#time-range-select"
@@ -109,17 +126,19 @@ pub fn dashboard(
         }
     };
 
-    base("Uptime Forge - Dashboard", &content)
+    base("Uptime Forge - Dashboard", &content, base_path)
 }
 
 /// Time range dropdown selector
-fn time_range_dropdown(current: TimeRange) -> Markup {
+fn time_range_dropdown(current: TimeRange, base_path: &str) -> Markup {
+    let status_path = asset_path(base_path, "/status");
+
     html! {
         div class="relative" {
             select
                 id="time-range-select"
                 class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-gray-700 cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                hx-get="/status"
+                hx-get=(status_path)
                 hx-trigger="change"
                 hx-target="#status-grid"
                 hx-swap="innerHTML"
@@ -330,12 +349,14 @@ pub fn db_error_partial(message: &str) -> Markup {
 }
 
 /// Generic error page with customizable status code and message
-pub fn error_page(status_code: u16, title: &str, message: &str) -> Markup {
+pub fn error_page(status_code: u16, title: &str, message: &str, base_path: &str) -> Markup {
     let (icon_color, bg_color) = match status_code {
         400..=499 => ("text-yellow-500", "bg-yellow-100"),
         500..=599 => ("text-red-500", "bg-red-100"),
         _ => ("text-gray-500", "bg-gray-100"),
     };
+
+    let home_path = asset_path(base_path, "/");
 
     let content = html! {
         div class="container mx-auto px-4 py-16" {
@@ -364,7 +385,7 @@ pub fn error_page(status_code: u16, title: &str, message: &str) -> Markup {
 
                 // Back to home button
                 a
-                    href="/"
+                    href=(home_path)
                     class="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 {
                     svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" {
@@ -376,5 +397,5 @@ pub fn error_page(status_code: u16, title: &str, message: &str) -> Markup {
         }
     };
 
-    base(&format!("{status_code} - {title}"), &content)
+    base(&format!("{status_code} - {title}"), &content, base_path)
 }

@@ -41,6 +41,7 @@ struct AppState {
     reload_trigger: ReloadTrigger,
     #[allow(dead_code)]
     db_pool: Option<PgPool>,
+    base_path: String,
 }
 
 #[tokio::main]
@@ -102,25 +103,34 @@ async fn main() -> Result<()> {
     .await;
 
     // Combined application state
+    let base_path = normalize_base_path(&config.server.base_path);
     let app_state = AppState {
         check_results,
         reload_trigger,
         db_pool,
+        base_path: base_path.clone(),
     };
 
     // Build router with shared state
     // Serve static files, then fall back to 404 handler for unknown routes
     let static_files = ServeDir::new("src/public").not_found_service(get(not_found));
 
-    let app = Router::new()
+    // Build routes that should be nested under base_path
+    let app_routes = Router::new()
         .route("/", get(index))
         .route("/status", get(status))
         .route("/reload", get(reload))
         .route("/health", get(health))
         .route("/metrics", get(|| async move { metric_handle.render() }))
         .fallback_service(static_files)
-        .layer(middleware)
         .with_state(app_state);
+
+    // Nest under base_path if it's not root
+    let app = if base_path == "/" {
+        app_routes.layer(middleware)
+    } else {
+        Router::new().nest(&base_path, app_routes).layer(middleware)
+    };
 
     // Start server
     let listener = tokio::net::TcpListener::bind(config.server.addr)
@@ -142,6 +152,24 @@ fn init_tracing() {
         .with(filter)
         .with(fmt::layer())
         .init();
+}
+
+/// Normalize base path to ensure it starts with "/" and doesn't end with "/"
+/// (except for root "/")
+fn normalize_base_path(path: &str) -> String {
+    let mut path = path.trim().to_string();
+
+    // Ensure path starts with "/"
+    if !path.starts_with('/') {
+        path = format!("/{path}");
+    }
+
+    // Remove trailing "/" unless it's the root
+    if path.len() > 1 && path.ends_with('/') {
+        path.pop();
+    }
+
+    path
 }
 
 /// Query parameters for status endpoints
@@ -193,7 +221,7 @@ async fn index(
     match get_buckets(state.db_pool.as_ref(), &endpoint_names, time_range).await {
         BucketResult::Success(buckets) => (
             StatusCode::OK,
-            Html(layout::dashboard(&results, &buckets, time_range).into_string()),
+            Html(layout::dashboard(&results, &buckets, time_range, &state.base_path).into_string()),
         ),
         BucketResult::DbError(err) => (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -204,6 +232,7 @@ async fn index(
                     &format!(
                         "Unable to connect to the database. The service is temporarily unavailable. Error: {err}"
                     ),
+                    &state.base_path,
                 )
                 .into_string(),
             ),
@@ -251,6 +280,7 @@ async fn health() -> &'static str {
 }
 
 /// Fallback handler for 404 - Not Found
+/// Uses "/" as base path since it's called from `ServeDir` which doesn't have access to state
 async fn not_found() -> (StatusCode, Html<String>) {
     (
         StatusCode::NOT_FOUND,
@@ -259,6 +289,7 @@ async fn not_found() -> (StatusCode, Html<String>) {
                 404,
                 "Page Not Found",
                 "The page you're looking for doesn't exist or has been moved.",
+                "/",
             )
             .into_string(),
         ),

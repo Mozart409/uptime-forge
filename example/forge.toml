@@ -1,6 +1,7 @@
 [server]
 addr = "0.0.0.0:3000"
 # reload_config_interval = 60  # Reload config every 60 seconds (default, 0 to disable)
+# base_path = "/uptime-forge"     # Base path when behind reverse proxy (default: /)
 
 # Example endpoints - customize these for your needs
 
