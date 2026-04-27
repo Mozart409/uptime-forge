@@ -6,22 +6,17 @@ pre-push:
       glob: "*.rs"
       run: cargo fmt --all --check
       stage_fixed: true
-    build-release:
-      run: cargo build --release --locked
-pre-commit:
-  parallel: false
-  commands:
     lockfile:
       glob: "Cargo.{toml,lock}"
       run: cargo generate-lockfile
       stage_fixed: true
+pre-commit:
+  parallel: false
+  commands:
     format:
       glob: "*.rs"
       run: cargo fmt --all
       stage_fixed: true
-    lint:
-      glob: "*.rs"
-      run: cargo clippy --all-targets --all-features -- -D warnings
     pedantic:
       glob: "*.rs"
       run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
