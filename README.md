@@ -9,6 +9,7 @@ A lightweight uptime monitoring service built with Rust. Monitor HTTP endpoints 
 - **Live Dashboard** - Real-time status updates via htmx (auto-refresh every 10s)
 - **Hot Config Reload** - Update endpoints without restarting the server
 - **TLS Verification Skip** - Option to skip certificate verification for internal services
+- **Base Path Support** - Run behind reverse proxy at a subpath (e.g., `/monitoring`)
 - **Minimal Resource Usage** - Built with Rust for low memory footprint
 
 ## Dashboard
@@ -55,6 +56,7 @@ Create a `forge.toml` file:
 [server]
 addr = "127.0.0.1:3000"
 reload_config_interval = 60  # Reload config every 60 seconds (0 to disable)
+base_path = "/monitoring"    # Optional: run behind reverse proxy at subpath
 
 [endpoints.google]
 addr = "https://google.com"
@@ -74,10 +76,11 @@ skip_tls_verification = true     # For self-signed certs
 
 #### Server
 
-| Option                   | Default  | Description                                   |
-| ------------------------ | -------- | --------------------------------------------- |
-| `addr`                   | Required | Server bind address (e.g., `127.0.0.1:3000`)  |
-| `reload_config_interval` | `60`     | Seconds between config reloads (0 to disable) |
+| Option                   | Default  | Description                                            |
+| ------------------------ | -------- | ------------------------------------------------------ |
+| `addr`                   | Required | Server bind address (e.g., `127.0.0.1:3000`)           |
+| `reload_config_interval` | `60`     | Seconds between config reloads (0 to disable)          |
+| `base_path`              | `/`      | Base path when behind reverse proxy (e.g., `/monitoring`) |
 
 #### Endpoints
 
@@ -113,6 +116,12 @@ Configuration files (in `example/postgres/`):
 | `/status` | GET    | Status grid partial (for htmx) |
 | `/reload` | GET    | Trigger config reload          |
 | `/health` | GET    | Health check (returns "ok")    |
+
+When `base_path` is configured (e.g., `/monitoring`), all endpoints are prefixed:
+- `/monitoring/` - Dashboard
+- `/monitoring/status` - Status endpoint
+- `/monitoring/health` - Health check
+- etc.
 
 ## Development
 
