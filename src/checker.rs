@@ -362,7 +362,7 @@ pub async fn check_all_endpoints(endpoints: &HashMap<String, Endpoint>) -> Vec<C
         .collect();
 
     let mut results = futures::future::join_all(futures).await;
-    results.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    results.sort_by_key(|a| a.name.to_lowercase());
     results
 }
 
@@ -370,7 +370,7 @@ pub async fn check_all_endpoints(endpoints: &HashMap<String, Endpoint>) -> Vec<C
 pub async fn get_sorted_results(state: &CheckResultsState) -> Vec<CheckResult> {
     let results = state.read().await;
     let mut sorted: Vec<_> = results.values().cloned().collect();
-    sorted.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    sorted.sort_by_key(|a| a.name.to_lowercase());
     sorted
 }
 
