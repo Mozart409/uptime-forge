@@ -19,7 +19,7 @@
         config.allowUnfree = true;
         overlays = [rust-overlay.overlays.default];
       };
-      rust = pkgs.rust-bin.stable."1.94.0".default;
+      rust = pkgs.rust-bin.stable."1.96.1".default;
     in {
       # to use other shells, run:
       # nix develop . --command fish

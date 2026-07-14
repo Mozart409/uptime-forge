@@ -10,7 +10,7 @@ homepage = "https://github.com/mozart409/uptime-forge"
 readme = "README.md"
 keywords = ["uptime", "monitoring", "health-check", "htmx"]
 categories = ["web-programming"]
-rust-version = "1.92"
+rust-version = "1.96.1"
 
 [dependencies]
 # Async runtime

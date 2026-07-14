@@ -1,5 +1,5 @@
 # Stage 1: Chef - prepare recipe for dependency caching
-FROM rust:1.92-alpine AS chef
+FROM rust:1.96.1-alpine AS chef
 
 RUN apk add --no-cache musl-dev && \
     cargo install cargo-chef --locked

@@ -127,7 +127,7 @@ When `base_path` is configured (e.g., `/monitoring`), all endpoints are prefixed
 
 ### Prerequisites
 
-- [Nix](https://nixos.org/download.html) (recommended) or Rust 1.84+
+- [Nix](https://nixos.org/download.html) (recommended) or Rust 1.96.1+
 - [Just](https://github.com/casey/just) command runner
 
 ### Commands
