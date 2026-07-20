@@ -9,7 +9,6 @@ target/
 *.swo
 
 # Git
-.git/
 .gitignore
 
 # Nix
