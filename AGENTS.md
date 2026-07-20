@@ -1,6 +1,6 @@
 # AGENTS.md - Coding Agent Guidelines for uptime-forge
 
-**Last updated:** 2026-04-27 | **Git hash:** `bbd6a653d084b98848114f74a1d248c1ab86f07a`
+**Last updated:** 2026-07-20 | **Git hash:** `bb409b5720c5a8f6c92634b25074b5b38ff44955`
 
 > **Maintenance:** When modifying this file, update the date and git hash above.
 > Run `git rev-parse HEAD` to get the current hash after committing changes.
@@ -50,31 +50,39 @@ nix develop --command <command>
 
 # Examples:
 nix develop --command cargo build
-nix develop --command bacon
+nix develop --command just
 ```
 
-### Primary Commands (Bacon - Recommended)
+### Primary Commands (Just)
 
 Run these inside `nix develop` or prefix with `nix develop --command`:
 
 ```bash
-bacon                        # Default: continuous type checking
-bacon run-long               # Run server with auto-restart on changes
-bacon clippy-all             # Lint all targets
-bacon pedantic               # Pedantic clippy lints
-bacon test                   # Run tests continuously
-bacon nextest                # Run tests with cargo-nextest
+just                         # Show the interactive recipe chooser
+just backend                 # Run server with auto-restart on changes
+just check                   # Run cargo check
+just check-all               # Run cargo check on all targets
+just clippy                  # Run clippy on the default target
+just clippy-all              # Run clippy on all targets
+just pedantic                # Run clippy in pedantic mode
+just test                    # Run the test suite
+just nextest                 # Run tests with cargo-nextest
+just doc                     # Build documentation
+just doc-open                # Build and open documentation
+just run                     # Run the application once
+just run-long                # Run the application without auto-restart
+just ex <name>               # Run a specific example
 ```
 
 ### Testing Commands
 
 ```bash
-cargo test                           # Run all tests
-cargo test <test_name>               # Run single test by name
-cargo test <module>::                # Run tests in module
-cargo test -- --nocapture            # Show println! output
-cargo nextest run                    # Run with nextest (better output)
-cargo nextest run -E 'test(name)'    # Single test with nextest
+just test                          # Run all tests
+just test -- <test_name>           # Run a single test by name
+just test -- <module>::            # Run tests in a module
+just test -- --nocapture           # Show println! output
+just nextest                       # Run with nextest (better output)
+just nextest -- -E 'test(name)'    # Single test with nextest
 ```
 
 ### Just Commands
@@ -82,8 +90,11 @@ cargo nextest run -E 'test(name)'    # Single test with nextest
 ```bash
 just css-watch               # Watch CSS for development
 just css-build               # Build minified CSS for production
-just prod-up                # Build CSS and start Podman container
+just dev                     # Run CSS watch and backend in parallel
+just prod-up                 # Build CSS and start Podman container
 just prod-down               # Stop Podman container
+just dev-up                  # Start development containers
+just dev-down                # Stop development containers
 ```
 
 ### Standard Cargo

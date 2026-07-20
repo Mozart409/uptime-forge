@@ -26,8 +26,8 @@
       devShells.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           # keep-sorted start
-          bacon
           cargo-deny
+          cargo-watch
           cargo-workspaces
           cocogitto
           dbeaver-bin
