@@ -13,7 +13,6 @@ categories = ["web-programming"]
 rust-version = "1.96.1"
 
 [dependencies]
-# keep-sorted start
 axum = "0.8"
 axum-prometheus = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
@@ -37,18 +36,15 @@ tower-http = { version = "0.7", features = [
     "catch-panic",
     "request-id",
     "util",
-    "fs",
+    "fs",]}
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "3"
 url = "2"
-# keep-sorted end
 
 [dev-dependencies]
-# keep-sorted start
 pretty_assertions = "1"
 tempfile = "3"
-# keep-sorted end
 
 [build-dependencies]
 chrono = "0.4"
