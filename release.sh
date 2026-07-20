@@ -30,7 +30,7 @@ cargo test
 # Stage and commit
 echo "Committing release..."
 git add Cargo.toml Cargo.lock
-git commit -m "release: ${TAG}"
+git commit -m "chore(release): ${TAG}"
 
 # Push commit
 echo "Pushing to origin..."
