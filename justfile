@@ -60,3 +60,10 @@ dev-up: css-build
 
 dev-down:
     podman-compose -f compose.dev.yml down
+
+trivy: clear
+    podman build -t uptime:scan .
+    trivy image uptime:scan
+
+clear:
+    clear

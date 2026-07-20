@@ -43,6 +43,7 @@
           rust
           sqlx-cli
           tailwindcss_4
+          trivy
           # keep-sorted end
         ];
         shellHook = ''
