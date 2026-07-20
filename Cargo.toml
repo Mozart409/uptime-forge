@@ -22,7 +22,7 @@ futures = "0.3"
 hickory-resolver = "0.26"
 maud = { version = "0.27", features = ["axum"] }
 regex = "1"
-reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-native-certs"] }
 serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.9", features = ["migrate", "postgres", "runtime-tokio", "chrono", "tls-rustls-ring-native-roots"] }
 tokio = { version = "1", features = ["full"] }
@@ -36,7 +36,8 @@ tower-http = { version = "0.7", features = [
     "catch-panic",
     "request-id",
     "util",
-    "fs",]}
+    "fs",
+]} 
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "3"
