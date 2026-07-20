@@ -30,6 +30,9 @@ pre-commit:
     keep-sorted:
       run: keep-sorted {staged_files}
       stage_fixed: true
+    just-fmt:
+      run: just --fmt
+      stage_fixed: true
 commit-msg:
   jobs:
     - name: cog verify
