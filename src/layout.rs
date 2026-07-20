@@ -38,11 +38,16 @@ pub fn base(title: &str, content: &Markup, base_path: &str) -> Markup {
                 link rel="stylesheet" href=(css_path);
             }
             body class="bg-gray-100 min-h-full flex flex-col" {
+                // Top loading bar for htmx requests
+                div id="htmx-top-bar" class="fixed top-0 left-0 right-0 h-1 bg-blue-500 z-50 opacity-0 transition-opacity duration-200" {}
                 main class="flex-grow" {
                     (content)
                 }
                 (footer())
                 script src=(js_path) defer {}
+                script {
+                    (htmx_top_bar_script())
+                }
             }
         }
     }
@@ -134,7 +139,7 @@ fn time_range_dropdown(current: TimeRange, base_path: &str) -> Markup {
     let status_path = asset_path(base_path, "/status");
 
     html! {
-        div class="relative" {
+        div class="flex items-center gap-2" {
             select
                 id="time-range-select"
                 class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-gray-700 cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -142,6 +147,7 @@ fn time_range_dropdown(current: TimeRange, base_path: &str) -> Markup {
                 hx-trigger="change"
                 hx-target="#status-grid"
                 hx-swap="innerHTML"
+                hx-indicator="#time-range-spinner"
                 name="range"
                 hx-include="this"
             {
@@ -153,6 +159,9 @@ fn time_range_dropdown(current: TimeRange, base_path: &str) -> Markup {
                         (range.label())
                     }
                 }
+            }
+            div id="time-range-spinner" class="htmx-indicator" {
+                (spinner())
             }
             // Dropdown arrow icon
             div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500" {
@@ -171,6 +180,28 @@ fn spinner() -> Markup {
             circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" {}
             path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" {}
         }
+    }
+}
+
+/// JavaScript to show/hide the top loading bar during htmx requests
+fn htmx_top_bar_script() -> Markup {
+    html! {
+        "(function() {
+            var bar = document.getElementById('htmx-top-bar');
+            var activeRequests = 0;
+            document.body.addEventListener('htmx:beforeRequest', function() {
+                activeRequests++;
+                bar.classList.remove('opacity-0');
+                bar.classList.add('opacity-100');
+            });
+            document.body.addEventListener('htmx:afterRequest', function() {
+                activeRequests--;
+                if (activeRequests === 0) {
+                    bar.classList.remove('opacity-100');
+                    bar.classList.add('opacity-0');
+                }
+            });
+        })();"
     }
 }
 

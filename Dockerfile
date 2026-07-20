@@ -30,6 +30,9 @@ COPY Cargo.toml Cargo.lock build.rs ./
 COPY src ./src
 COPY migrations ./migrations
 
+# Copy git metadata so build.rs can embed the current commit hash
+COPY .git ./.git
+
 RUN cargo build --release --locked
 
 # Stage 4: Runtime image

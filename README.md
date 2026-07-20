@@ -136,21 +136,24 @@ When `base_path` is configured (e.g., `/monitoring`), all endpoints are prefixed
 # Enter development environment
 nix develop
 
-# Run with auto-reload
-bacon run-long
+# Run backend with auto-reload
+just backend
 
 # Watch CSS changes
 just css-watch
+
+# Development mode: CSS watch + backend in parallel
+just dev
 
 # Build for production
 cargo build --release
 just css-build
 
 # Run tests
-cargo test
+just test
 
 # Lint
-cargo clippy
+just clippy
 
 # Docker
 just docker-up    # Build and start

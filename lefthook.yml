@@ -6,13 +6,16 @@ pre-push:
       glob: "*.rs"
       run: cargo fmt --all --check
       stage_fixed: true
+    pedantic:
+      glob: "*.rs"
+      run: cargo clippy --all-targets --all-features -- -D warnings -W clippy::pedantic
+pre-commit:
+  parallel: false
+  commands:
     lockfile:
       glob: "Cargo.{toml,lock}"
       run: cargo generate-lockfile
       stage_fixed: true
-pre-commit:
-  parallel: false
-  commands:
     format:
       glob: "*.rs"
       run: cargo fmt --all
@@ -27,3 +30,13 @@ pre-commit:
       glob: "*.{css,rs}"
       run: tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify
       stage_fixed: true
+    keep-sorted:
+      run: keep-sorted {staged_files}
+      stage_fixed: true
+    just-fmt:
+      run: just --fmt
+      stage_fixed: true
+commit-msg:
+  jobs:
+    - name: cog verify
+      run: cog verify --file {1}

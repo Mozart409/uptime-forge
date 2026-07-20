@@ -1,36 +1,69 @@
+set unstable
+set dotenv-load
 default:
     just --choose
 
 # Watch CSS for development (auto-rebuild on changes)
 css-watch:
-    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --watch
+    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --watch --minify --content 'src/**/*.rs'
 
 # Build CSS for production (minified)
 css-build:
-    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify
+    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify --content 'src/**/*.rs'
 
-# Run backend with bacon (auto-restart on changes)
-backend:
-    bacon run-long
-
-# Development mode: run CSS watch and backend in parallel
+# Run backend with auto-restart on Rust source changes
 dev:
-    #!/usr/bin/env bash
-    trap 'kill 0' EXIT
-    just css-watch &
-    just backend &
-    wait
+    cargo watch -c -x run
 
-# Build and start Docker container in detached mode
+# Run cargo check
+check:
+    cargo check
+
+# Run cargo check on all targets
+check-all:
+    cargo check --all-targets
+
+# Run clippy in pedantic mode
+pedantic:
+    cargo clippy -- -W clippy::pedantic
+
+# Run the test suite
+test *args:
+    cargo test {{ args }}
+
+# Run tests with cargo-nextest
+nextest *args:
+    cargo nextest run --hide-progress-bar --failure-output final {{ args }}
+
+# Build documentation
+doc:
+    cargo doc --no-deps
+
+# Build documentation and open it in the browser
+doc-open:
+    cargo doc --no-deps --open
+
+# Run the application once
+run *args:
+    cargo run -- {{ args }}
+
+# Build and start Podman container in detached mode
 prod-up: css-build
-    docker compose -f ./example/compose.yml up -d --build
+    podman-compose -f ./example/compose.yml up -d --build
 
-# Stop and remove Docker container
+# Stop and remove Podman container
 prod-down:
-    docker compose -f ./example/compose.yml down
+    podman-compose -f ./example/compose.yml down
 
 dev-up: css-build
-    COMPOSE_BAKE=true docker compose -f compose.dev.yml up -d --build --remove-orphans
+    podman-compose -f compose.dev.yml up -d --build --remove-orphans
 
-dev-down: 
-    docker compose -f compose.dev.yml down
+dev-down:
+    podman-compose -f compose.dev.yml down
+
+trivy: clear
+    podman build -t uptime:scan .
+    trivy image uptime:scan
+
+clear:
+    clear

@@ -13,13 +13,23 @@ categories = ["web-programming"]
 rust-version = "1.96.1"
 
 [dependencies]
-# Async runtime
-tokio = { version = "1", features = ["full"] }
-
-# Web framework
 axum = "0.8"
+axum-prometheus = "0.10"
+chrono = { version = "0.4", features = ["serde"] }
+color-eyre = "0.6"
+dotenvy = "0.15"
+futures = "0.3"
+hickory-resolver = "0.26"
+maud = { version = "0.27", features = ["axum"] }
+regex = "1"
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
+serde = { version = "1", features = ["derive"] }
+sqlx = { version = "0.9", features = ["migrate", "postgres", "runtime-tokio", "chrono", "tls-rustls-ring-native-roots"] }
+tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
+toml = "1.1"
 tower = { version = "0.5", features = ["util"] }
-tower-http = { version = "0.6", features = [
+tower-http = { version = "0.7", features = [
     "trace",
     "timeout",
     "compression-gzip",
@@ -27,54 +37,15 @@ tower-http = { version = "0.6", features = [
     "request-id",
     "util",
     "fs",
-] }
-
-# Templating
-maud = { version = "0.26", features = ["axum"] }
-
-# Serialization
-serde = { version = "1", features = ["derive"] }
-toml = "0.8"
-
-# URL parsing and regex
-url = "2"
-regex = "1"
-
-# Error handling
-color-eyre = "0.6"
-
-# Environment
-dotenvy = "0.15"
-
-# Logging/tracing
+]} 
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# HTTP client
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
-
-# Database
-sqlx = { version = "0.8", features = ["migrate", "postgres", "runtime-tokio-rustls", "chrono"] }
-
-# Time and ULID
-chrono = { version = "0.4", features = ["serde"] }
-ulid = "1"
-
-# Async utilities
-futures = "0.3"
-tokio-util = "0.7"
-
-# DNS resolution
-hickory-resolver = "0.25"
-
-# Prometheus metrics
-axum-prometheus = "0.10"
+ulid = "3"
+url = "2"
 
 [dev-dependencies]
-# Temp files for config tests
-tempfile = "3"
-# Better assertions
 pretty_assertions = "1"
+tempfile = "3"
 
 [build-dependencies]
 chrono = "0.4"
