@@ -47,6 +47,7 @@
         ];
         shellHook = ''
           lefthook install
+          du -sh ./target/
         '';
       };
     });

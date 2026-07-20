@@ -5,11 +5,11 @@ default:
 
 # Watch CSS for development (auto-rebuild on changes)
 css-watch:
-    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --watch --minify
+    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --watch --minify --content 'src/**/*.rs'
 
 # Build CSS for production (minified)
 css-build:
-    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify
+    tailwindcss -i src/public/css/input.css -o src/public/css/output.css --minify --content 'src/**/*.rs'
 
 # Run backend with auto-restart on Rust source changes
 dev:
