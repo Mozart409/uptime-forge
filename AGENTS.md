@@ -82,8 +82,8 @@ cargo nextest run -E 'test(name)'    # Single test with nextest
 ```bash
 just css-watch               # Watch CSS for development
 just css-build               # Build minified CSS for production
-just docker-up               # Build CSS and start Docker container
-just docker-down             # Stop Docker container
+just prod-up                # Build CSS and start Podman container
+just prod-down               # Stop Podman container
 ```
 
 ### Standard Cargo
@@ -109,7 +109,7 @@ src/
 └── public/        # Static assets (css/, js/)
 
 example/           # Ready-to-use deployment files
-├── compose.yml    # Docker Compose for production
+├── compose.yml    # Compose for production
 ├── forge.toml     # Example endpoint configuration
 └── postgres/      # PostgreSQL + TimescaleDB config
     ├── postgresql.conf

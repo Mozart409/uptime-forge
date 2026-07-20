@@ -21,16 +21,16 @@ dev:
     just backend &
     wait
 
-# Build and start Docker container in detached mode
+# Build and start Podman container in detached mode
 prod-up: css-build
-    docker compose -f ./example/compose.yml up -d --build
+    podman-compose -f ./example/compose.yml up -d --build
 
-# Stop and remove Docker container
+# Stop and remove Podman container
 prod-down:
-    docker compose -f ./example/compose.yml down
+    podman-compose -f ./example/compose.yml down
 
 dev-up: css-build
-    COMPOSE_BAKE=true docker compose -f compose.dev.yml up -d --build --remove-orphans
+    podman-compose -f compose.dev.yml up -d --build --remove-orphans
 
 dev-down: 
-    docker compose -f compose.dev.yml down
+    podman-compose -f compose.dev.yml down
