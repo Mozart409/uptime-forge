@@ -38,7 +38,7 @@ git push origin main
 
 # Create and push tag
 echo "Creating tag ${TAG}..."
-git tag "${TAG}" -m "release: ${TAG}"
+git tag "${TAG}" -m "chore(release): ${TAG}"
 git push origin "${TAG}"
 
 echo "Release ${TAG} complete!"
