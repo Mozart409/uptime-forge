@@ -14,29 +14,18 @@ rust-version = "1.96.1"
 
 [dependencies]
 # keep-sorted start
-
 ] }
 axum = "0.8"
-# Prometheus metrics
 axum-prometheus = "0.10"
-# Time and ULID
 chrono = { version = "0.4", features = ["serde"] }
-# Error handling
 color-eyre = "0.6"
-# Environment
 dotenvy = "0.15"
-# Async utilities
 futures = "0.3"
-# DNS resolution
 hickory-resolver = "0.26"
-# Templating
 maud = { version = "0.27", features = ["axum"] }
 regex = "1"
-# HTTP client
 reqwest = { version = "0.13", default-features = false, features = ["rustls-native-certs"] }
-# Serialization
 serde = { version = "1", features = ["derive"] }
-# Database
 sqlx = { version = "0.9", features = ["migrate", "postgres", "runtime-tokio", "chrono", "tls-rustls-ring-native-roots"] }
 tokio = { version = "1", features = ["full"] }
 tokio-util = "0.7"
@@ -50,21 +39,17 @@ tower-http = { version = "0.7", features = [
     "request-id",
     "util",
     "fs",
-# Logging/tracing
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ulid = "3"
-# URL parsing and regex
 url = "2"
-
 # keep-sorted end
+
 [dev-dependencies]
 # keep-sorted start
-# Better assertions
 pretty_assertions = "1"
-# Temp files for config tests
 tempfile = "3"
-
 # keep-sorted end
+
 [build-dependencies]
 chrono = "0.4"
