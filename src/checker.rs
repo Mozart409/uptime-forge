@@ -1,6 +1,6 @@
 use std::{collections::HashMap, net::ToSocketAddrs, path::PathBuf, sync::Arc, time::Duration};
 
-use hickory_resolver::{Resolver, config::ResolverConfig, name_server::TokioConnectionProvider};
+use hickory_resolver::{Resolver, config::ResolverConfig, net::runtime::TokioRuntimeProvider};
 use reqwest::Client;
 use sqlx::PgPool;
 use tokio::{
@@ -145,7 +145,7 @@ async fn check_http(name: &str, endpoint: &Endpoint) -> CheckResult {
 
     let client = match Client::builder()
         .timeout(Duration::from_secs(endpoint.timeout))
-        .danger_accept_invalid_certs(endpoint.skip_tls_verification)
+        .tls_danger_accept_invalid_certs(endpoint.skip_tls_verification)
         .build()
     {
         Ok(c) => c,
@@ -288,11 +288,21 @@ async fn check_dns(name: &str, endpoint: &Endpoint) -> CheckResult {
     let start = std::time::Instant::now();
 
     // Create resolver
-    let resolver = Resolver::builder_with_config(
+    let resolver = match Resolver::builder_with_config(
         ResolverConfig::default(),
-        TokioConnectionProvider::default(),
+        TokioRuntimeProvider::default(),
     )
-    .build();
+    .build()
+    {
+        Ok(r) => r,
+        Err(e) => {
+            let elapsed = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
+            result.response_time_ms = Some(elapsed);
+            result.error = Some(format!("failed to create DNS resolver: {e}"));
+            result.error_type = Some(ErrorType::Dns);
+            return result;
+        }
+    };
 
     let timeout = Duration::from_secs(endpoint.timeout);
     let lookup_future = resolver.lookup_ip(&hostname);
